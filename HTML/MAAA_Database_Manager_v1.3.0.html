@@ -191,6 +191,57 @@
       font-weight: 600;
       margin-bottom: 1rem;
       color: var(--theme-accent);
+      position: relative;
+    }
+
+    .help-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 15px;
+      height: 15px;
+      border-radius: 50%;
+      border: 1.5px solid var(--text-muted);
+      background: none;
+      color: var(--text-muted);
+      font-size: 0.625rem;
+      font-weight: 700;
+      cursor: pointer;
+      margin-left: 6px;
+      vertical-align: middle;
+      padding: 0;
+      line-height: 1;
+      transition: border-color 0.15s, color 0.15s, background 0.15s;
+    }
+
+    .help-btn:hover {
+      border-color: var(--theme-primary);
+      color: var(--theme-primary);
+      background: var(--theme-soft);
+    }
+
+    .tooltip-bubble {
+      display: none;
+      position: absolute;
+      top: calc(100% + 4px);
+      left: 0;
+      background: #1e293b;
+      color: #f1f5f9;
+      font-size: 0.8125rem;
+      font-weight: 400;
+      line-height: 1.5;
+      padding: 8px 12px;
+      border-radius: 6px;
+      max-width: 300px;
+      width: max-content;
+      z-index: 200;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+      white-space: normal;
+      pointer-events: none;
+    }
+
+    .tooltip-bubble.visible {
+      display: block;
     }
 
     /* File upload */
@@ -662,7 +713,7 @@
 
         <div class="control-panel">
           <!-- File Upload -->
-          <div class="control-section">
+          <div class="control-section" id="membersDataImport">
             <h3 class="section-title">Data Import</h3>
             <div class="file-upload">
               <input type="file" id="membersFileInput" accept=".csv" class="file-input">
@@ -797,7 +848,7 @@
 
         <div class="control-panel">
           <!-- File Upload -->
-          <div class="control-section">
+          <div class="control-section" id="execDataImport">
             <h3 class="section-title">Data Import</h3>
             <div class="file-upload">
               <input type="file" id="execFileInput" accept=".csv" class="file-input">
@@ -996,8 +1047,26 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
   <script>
     // Application state
-    const APP_VERSION = '1.2.1';
-    const APP_BUILD_DATE = '2026-06-23';
+    const APP_VERSION = '1.3.0';
+    const APP_BUILD_DATE = '2026-06-24';
+
+    const TOOLTIP_TEXT = {
+      membersDataImport:       'Upload your MAAA Members CSV export (e.g. Members.QLD.csv). Data is processed entirely in your browser — nothing is uploaded to any server.',
+      membersProfileSection:   'Save your current column selection and filter settings as a named profile. Profiles are stored in your browser and can be backed up using Export Workspace.',
+      membersColumnSection:    'Choose which columns from the source CSV to include in your export. Unticked columns are excluded from both the table preview and the downloaded file.',
+      membersFilterSection:    'Filter records to include only those matching selected values in a chosen column — for example, filter by State to export QLD members only.',
+      membersMailchimpSection: 'Map your data columns to Mailchimp\'s required fields (Email, First Name, Last Name, Phone) and download a Mailchimp-ready CSV. Optionally add a Tags column to segment contacts on import.',
+      membersExportSection:    'Download the filtered, column-selected data as a CSV. Normalisation options clean up name casing and reformat Australian phone numbers.',
+      membersSummarySection:   'Data quality overview: duplicate emails, missing or invalid addresses, and role-based inboxes (admin@, secretary@, etc.). Click any card to expand details.',
+      execDataImport:          'Upload your MAAA Club Executives CSV (e.g. ClubsAffiliated.QLD.csv). Each club is expanded to three rows — one each for President, Secretary, and Registrar.',
+      execProfileSection:      'Save your current column and filter settings as a named profile. Profiles are stored in your browser and can be backed up using Export Workspace.',
+      execColumnSection:       'Choose which columns from the expanded executive data to include in your export.',
+      execFilterSection:       'Filter the executive data by column value — for example, filter by Role to export Secretaries only.',
+      execMailchimpSection:    'Export executive contacts in Mailchimp import format. Useful for sending communications to club Presidents, Secretaries, or Registrars.',
+      execExportSection:       'Download the executive data as a CSV. "Exclude empty roles" removes rows where no person is recorded for that position.',
+      execClubRegisterSection: 'Exports one row per club with all three exec contacts as flat columns — designed for importing into a Monday.com Club Register board.',
+      execSummarySection:      'Data quality overview for executive records. The Empty Roles card highlights clubs missing one or more exec positions. Click any card for details.',
+    };
 
     const ROLE_BASED_PREFIXES = [
       'admin', 'administrator', 'info', 'information', 'support', 'help',
@@ -2838,6 +2907,39 @@
       URL.revokeObjectURL(url);
     }
 
+    function initTooltips() {
+      Object.keys(TOOLTIP_TEXT).forEach(id => {
+        const section = document.getElementById(id);
+        if (!section) return;
+        const h3 = section.querySelector('.section-title');
+        if (!h3) return;
+
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'help-btn';
+        btn.textContent = '?';
+        btn.setAttribute('aria-label', 'Help');
+
+        const bubble = document.createElement('span');
+        bubble.className = 'tooltip-bubble';
+        bubble.textContent = TOOLTIP_TEXT[id];
+
+        h3.appendChild(btn);
+        h3.appendChild(bubble);
+
+        btn.addEventListener('click', e => {
+          e.stopPropagation();
+          const isVisible = bubble.classList.contains('visible');
+          document.querySelectorAll('.tooltip-bubble.visible').forEach(b => b.classList.remove('visible'));
+          if (!isVisible) bubble.classList.add('visible');
+        });
+      });
+
+      document.addEventListener('click', () => {
+        document.querySelectorAll('.tooltip-bubble.visible').forEach(b => b.classList.remove('visible'));
+      });
+    }
+
     // Event Listeners
     document.addEventListener('DOMContentLoaded', function() {
       // Load saved state
@@ -3062,6 +3164,8 @@
 
       // Show welcome message
       showMessage('MAAA Database Manager loaded successfully. Upload a CSV file to get started.', 'info');
+
+      initTooltips();
     });
     
     // Keyboard shortcuts
@@ -3069,11 +3173,11 @@
       // ESC to close modals
       if (e.key === 'Escape') {
         document.getElementById('aboutModal').style.display = 'none';
-        // Also close custom prompt modal if it exists
         const promptModal = document.getElementById('customPromptModal');
         if (promptModal) promptModal.remove();
         const confirmModal = document.getElementById('customConfirmModal');
         if (confirmModal) confirmModal.remove();
+        document.querySelectorAll('.tooltip-bubble.visible').forEach(b => b.classList.remove('visible'));
       }
       
       // Ctrl+E to export
