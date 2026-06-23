@@ -2605,10 +2605,10 @@
 
     // Club Register Export helpers
     const CLUB_REG_DEFAULTS = [
-      'ClubID', 'ClubName', 'NickName', 'ClubType', 'TypeName', 'MemberCount', 'StateID', 'Suburb',
-      'PresFirstName', 'PresSurname', 'PresEmail', 'PresMobile',
-      'SecFirstName', 'SecSurname', 'SecEmail', 'SecMobile',
-      'RegFirstName', 'RegSurname', 'RegEmail', 'RegMobile'
+      'ClubID', 'ClubName', 'NickName', 'ClubType', 'TypeName', 'MemberCount', 'StateID',
+      'PresFirstName', 'PresSurname', 'PresEmail', 'PresMobile', 'PresSuburb',
+      'SecFirstName', 'SecSurname', 'SecEmail', 'SecMobile', 'SecSuburb',
+      'RegFirstName', 'RegSurname', 'RegEmail', 'RegMobile', 'RegSuburb'
     ];
     const CLUB_REG_NAME_COLS = ['ClubName', 'BodyName', 'FieldName', 'Description', 'MeetingPlace'];
     const CLUB_REG_UPPER_COLS = ['NickName']; // abbreviation fields — always ALL CAPS
@@ -2616,9 +2616,9 @@
     const EXEC_PREFIXES = ['Pres', 'Sec', 'Reg'];
     // Mapped exec contact columns appended after club-level columns
     const EXEC_MAPPED_COLS = [
-      'PresFirstName', 'PresSurname', 'PresEmail', 'PresMobile',
-      'SecFirstName', 'SecSurname', 'SecEmail', 'SecMobile',
-      'RegFirstName', 'RegSurname', 'RegEmail', 'RegMobile'
+      'PresFirstName', 'PresSurname', 'PresEmail', 'PresMobile', 'PresSuburb',
+      'SecFirstName', 'SecSurname', 'SecEmail', 'SecMobile', 'SecSuburb',
+      'RegFirstName', 'RegSurname', 'RegEmail', 'RegMobile', 'RegSuburb'
     ];
 
     function getClubRegisterHeaders(rawData) {
@@ -2648,6 +2648,7 @@
           newRow[`${prefix}Surname`]   = row[`${prefix}Surname`] || '';
           newRow[`${prefix}Email`]     = row[`${prefix}Email`] || '';
           newRow[`${prefix}Mobile`]    = row[`${prefix}Mobile`] || '';
+          newRow[`${prefix}Suburb`]    = row[`${prefix}Suburb`] || '';
         });
         return newRow;
       });
