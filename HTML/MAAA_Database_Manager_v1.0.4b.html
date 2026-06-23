@@ -734,6 +734,17 @@
                 </div>
               </div>
               <button class="btn btn-primary" id="membersExportMailchimp">Export Mailchimp CSV</button>
+              <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid rgba(59,130,246,0.3);">
+                <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.875rem; margin-bottom: 0.5rem; cursor: pointer;">
+                  <input type="checkbox" id="membersMailchimpIncludeTags">
+                  Include Tags column (for MailChimp import tagging)
+                </label>
+                <div id="membersMailchimpTagsInput" style="display: none; margin-top: 0.5rem;">
+                  <label style="font-size: 0.875rem; font-weight: 500;">Tag value:</label>
+                  <input type="text" id="membersMailchimpTagValue"
+                         style="padding: 0.375rem 0.5rem; border: 1px solid var(--border); border-radius: 0.375rem; font-size: 0.875rem; width: 140px; margin-left: 0.5rem;">
+                </div>
+              </div>
             </div>
           </div>
 
@@ -741,9 +752,13 @@
           <div class="control-section" id="membersExportSection" style="display: none;">
             <h3 class="section-title">Export Data</h3>
             <div class="mb-1">
-              <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.875rem; margin-bottom: 1rem;">
+              <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.875rem; margin-bottom: 0.5rem;">
                 <input type="checkbox" id="membersNormalizeCase">
                 Normalize name capitalization (Proper Case for Given Names and Surnames)
+              </label>
+              <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.875rem; margin-bottom: 1rem;">
+                <input type="checkbox" id="membersNormalizePhone">
+                Normalize phone number format (Australian)
               </label>
             </div>
             <button class="btn btn-primary" id="membersExportCsv">Export Selected Data</button>
@@ -854,6 +869,17 @@
                 </div>
               </div>
               <button class="btn btn-primary" id="execExportMailchimp">Export Mailchimp CSV</button>
+              <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid rgba(59,130,246,0.3);">
+                <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.875rem; margin-bottom: 0.5rem; cursor: pointer;">
+                  <input type="checkbox" id="execMailchimpIncludeTags">
+                  Include Tags column (for MailChimp import tagging)
+                </label>
+                <div id="execMailchimpTagsInput" style="display: none; margin-top: 0.5rem;">
+                  <label style="font-size: 0.875rem; font-weight: 500;">Tag value:</label>
+                  <input type="text" id="execMailchimpTagValue"
+                         style="padding: 0.375rem 0.5rem; border: 1px solid var(--border); border-radius: 0.375rem; font-size: 0.875rem; width: 140px; margin-left: 0.5rem;">
+                </div>
+              </div>
             </div>
           </div>
 
@@ -861,9 +887,17 @@
           <div class="control-section" id="execExportSection" style="display: none;">
             <h3 class="section-title">Export Data</h3>
             <div class="mb-1">
-              <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.875rem; margin-bottom: 1rem;">
+              <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.875rem; margin-bottom: 0.5rem;">
                 <input type="checkbox" id="execNormalizeCase">
                 Normalize name capitalization (Proper Case for Given Names and Surnames)
+              </label>
+              <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.875rem; margin-bottom: 0.5rem;">
+                <input type="checkbox" id="execNormalizePhone">
+                Normalize phone number format (Australian)
+              </label>
+              <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.875rem; margin-bottom: 1rem;">
+                <input type="checkbox" id="execExcludeEmptyRoles">
+                Exclude empty executive roles from export
               </label>
             </div>
             <button class="btn btn-primary" id="execExportCsv">Export Selected Data</button>
@@ -921,6 +955,7 @@
 
         <h4>Changelog:</h4>
         <ul>
+          <li><strong>1.1.0</strong> - Field trimming on ingest; FirstName auto-extraction; phone normalisation; role-based email detection; MailChimp Tags column; exec empty role exclusion</li>
           <li><strong>1.0.2</strong> - Added name normalization preview and detailed summary</li>
           <li><strong>1.0.1</strong> - Fixed profile saving functionality</li>
           <li><strong>1.0.0</strong> - Initial release with complete feature set</li>
@@ -935,8 +970,20 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
   <script>
     // Application state
-    const APP_VERSION = '1.0.2';
-    const APP_BUILD_DATE = '2025-08-24';
+    const APP_VERSION = '1.1.0';
+    const APP_BUILD_DATE = '2026-06-23';
+
+    const ROLE_BASED_PREFIXES = [
+      'admin', 'administrator', 'info', 'information', 'support', 'help',
+      'contact', 'contacts', 'sales', 'marketing', 'billing', 'accounts',
+      'finance', 'noreply', 'no-reply', 'donotreply', 'do-not-reply',
+      'webmaster', 'postmaster', 'abuse', 'security',
+      'office', 'reception', 'mail', 'general', 'enquiries', 'enquiry',
+      'feedback', 'secretary', 'registrar', 'president', 'treasurer',
+      'club', 'membership', 'members', 'committee', 'register'
+    ];
+
+    const PHONE_COLUMNS = ['Phone', 'PhoneWork', 'Mobile', 'phone', 'mobile', 'phoneWork'];
     
     const AppState = {
       currentMode: 'members',
@@ -993,6 +1040,50 @@
       const trimmed = email.trim();
       if (!trimmed) return false;
       return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed);
+    }
+
+    function isRoleBasedEmail(email) {
+      if (!email || typeof email !== 'string') return false;
+      const prefix = email.toLowerCase().split('@')[0];
+      return ROLE_BASED_PREFIXES.some(rb =>
+        prefix === rb ||
+        prefix.startsWith(rb + '.') ||
+        prefix.startsWith(rb + '+') ||
+        prefix.startsWith(rb + '_')
+      );
+    }
+
+    function normalizePhone(phone) {
+      if (!phone || typeof phone !== 'string') return phone;
+      const trimmed = phone.trim();
+      if (!trimmed) return '';
+      const digits = trimmed.replace(/\D/g, '');
+      if (!digits) return trimmed;
+      let local = digits;
+      if (local.startsWith('61') && local.length === 11) {
+        local = '0' + local.slice(2);
+      }
+      if (local.length === 10) {
+        if (local.startsWith('04') || local.startsWith('05')) {
+          return `${local.slice(0, 4)} ${local.slice(4, 7)} ${local.slice(7)}`;
+        }
+        if (local.startsWith('0')) {
+          return `${local.slice(0, 2)} ${local.slice(2, 6)} ${local.slice(6)}`;
+        }
+      }
+      return trimmed;
+    }
+
+    function applyPhoneNormalization(data) {
+      return data.map(row => {
+        const normalizedRow = { ...row };
+        PHONE_COLUMNS.forEach(col => {
+          if (normalizedRow[col]) {
+            normalizedRow[col] = normalizePhone(normalizedRow[col]);
+          }
+        });
+        return normalizedRow;
+      });
     }
 
     function csvEscape(value) {
@@ -1207,9 +1298,18 @@
             }
 
             try {
-              const processed = mode === 'exec' ? processExecData(results.data) : results.data;
+              // Trim all string fields on ingest
+              const trimmedData = results.data.map(row => {
+                const trimmedRow = {};
+                Object.keys(row).forEach(key => {
+                  trimmedRow[key] = typeof row[key] === 'string' ? row[key].trim() : row[key];
+                });
+                return trimmedRow;
+              });
+
+              const processed = mode === 'exec' ? processExecData(trimmedData) : processMembersData(trimmedData);
               resolve({
-                raw: results.data,
+                raw: trimmedData,
                 processed: processed,
                 headers: Object.keys(processed[0] || {})
               });
@@ -1221,6 +1321,19 @@
             reject(new Error(`Failed to parse CSV: ${error.message}`));
           }
         });
+      });
+    }
+
+    function processMembersData(rawData) {
+      return rawData.map(row => {
+        const newRow = {};
+        Object.keys(row).forEach(key => {
+          newRow[key] = row[key];
+          if (key === 'GivenNames') {
+            newRow['FirstName'] = (row[key] || '').split(/\s+/)[0] || '';
+          }
+        });
+        return newRow;
       });
     }
 
@@ -1240,6 +1353,7 @@
             Role: roleNames[rolePrefix],
             Surname: row[`${rolePrefix}Surname`] || '',
             GivenNames: row[`${rolePrefix}GivenNames`] || '',
+            FirstName: (row[`${rolePrefix}GivenNames`] || '').split(/\s+/)[0] || '',
             Phone: row[`${rolePrefix}Phone`] || '',
             Mobile: row[`${rolePrefix}Mobile`] || '',
             Email: row[`${rolePrefix}Email`] || '',
@@ -1337,10 +1451,12 @@
         duplicateEmails: [],
         invalidEmails: [],
         missingEmails: [],
+        roleBasedEmails: [],
         emptyRoles: [],
         duplicateDetails: [],
         invalidDetails: [],
-        missingDetails: []
+        missingDetails: [],
+        roleBasedDetails: []
       };
       
       // Find email column
@@ -1368,6 +1484,15 @@
               id: row.ClubID || row.MemberID || `Row ${index + 1}`
             });
           } else {
+            if (isRoleBasedEmail(email)) {
+              analysis.roleBasedEmails.push({ index, row, email });
+              analysis.roleBasedDetails.push({
+                name: `${row.GivenNames || row.FirstName || ''} ${row.Surname || row.LastName || ''}`.trim() || 'Unknown',
+                email: email,
+                id: row.ClubID || row.MemberID || `Row ${index + 1}`,
+                role: row.Role || ''
+              });
+            }
             if (!emailCounts[email]) emailCounts[email] = [];
             emailCounts[email].push({ index, row });
           }
@@ -1508,7 +1633,7 @@
       const headers = AppState.data[mode].headers;
       const selects = [
         { id: `${mode}MailchimpEmail`, defaultMatch: ['Email1', 'Email', 'email'] },
-        { id: `${mode}MailchimpFirstName`, defaultMatch: ['GivenNames', 'FirstName', 'GivenName'] },
+        { id: `${mode}MailchimpFirstName`, defaultMatch: ['FirstName', 'GivenNames', 'GivenName'] },
         { id: `${mode}MailchimpLastName`, defaultMatch: ['SurName', 'Surname', 'LastName'] },
         { id: `${mode}MailchimpPhone`, defaultMatch: ['Mobile', 'Phone', 'phone'] }
       ];
@@ -1639,9 +1764,16 @@
           type: (analysis.invalidEmails.length + analysis.missingEmails.length) === 0 ? 'success' : 'warning',
           clickable: (analysis.invalidEmails.length + analysis.missingEmails.length) > 0,
           detailType: 'invalid'
+        },
+        {
+          number: analysis.roleBasedEmails.length,
+          label: 'Role-based Emails',
+          type: analysis.roleBasedEmails.length === 0 ? 'success' : 'warning',
+          clickable: analysis.roleBasedEmails.length > 0,
+          detailType: 'rolebased'
         }
       ];
-      
+
       if (mode === 'exec') {
         cards.push({
           number: analysis.emptyRoles.length,
@@ -1701,6 +1833,16 @@
         detailedGrid.appendChild(missingCard);
       }
       
+      // Role-based emails detail
+      if (analysis.roleBasedDetails.length > 0) {
+        const roleBasedCard = createDetailCard('Role-based Email Addresses', 'warning', analysis.roleBasedDetails.map(rb => ({
+          primary: rb.name,
+          secondary: `${rb.role ? rb.role + ' — ' : ''}Email: ${rb.email}`,
+          csv: `"${rb.name}","${rb.email}","${rb.role || ''}"`
+        })));
+        detailedGrid.appendChild(roleBasedCard);
+      }
+
       // Empty roles detail (exec mode only)
       if (mode === 'exec' && analysis.emptyRoles.length > 0) {
         const emptyCard = createDetailCard('Empty Role Entries', 'warning', analysis.emptyRoles.map((empty, idx) => ({
@@ -1762,6 +1904,14 @@
             primary: item.name,
             secondary: item.email ? `ID: ${item.id}, Email: ${item.email}` : `ID: ${item.id} (Missing email)`,
             csv: `"${item.name}",${item.id},"${item.email || 'MISSING'}"`
+          }));
+          break;
+        case 'rolebased':
+          title = 'Role-based Email Addresses';
+          items = analysis.roleBasedDetails.map(rb => ({
+            primary: rb.name,
+            secondary: `${rb.role ? rb.role + ' — ' : ''}ID: ${rb.id}, Email: ${rb.email}`,
+            csv: `"${rb.name}",${rb.id},"${rb.email}","${rb.role || ''}"`
           }));
           break;
         case 'empty':
@@ -1930,9 +2080,13 @@
           email: document.getElementById(`${mode}MailchimpEmail`)?.value || '',
           firstName: document.getElementById(`${mode}MailchimpFirstName`)?.value || '',
           lastName: document.getElementById(`${mode}MailchimpLastName`)?.value || '',
-          phone: document.getElementById(`${mode}MailchimpPhone`)?.value || ''
+          phone: document.getElementById(`${mode}MailchimpPhone`)?.value || '',
+          includeTags: document.getElementById(`${mode}MailchimpIncludeTags`)?.checked || false,
+          tagValue: document.getElementById(`${mode}MailchimpTagValue`)?.value || formatDate()
         },
         normalizeCase: document.getElementById(`${mode}NormalizeCase`)?.checked || false,
+        normalizePhone: document.getElementById(`${mode}NormalizePhone`)?.checked || false,
+        excludeEmptyRoles: mode === 'exec' ? (document.getElementById('execExcludeEmptyRoles')?.checked || false) : false,
         previewNormalization: document.getElementById(`${mode}PreviewNormalization`)?.checked || false
       };
       
@@ -2081,10 +2235,28 @@
       
       // Apply case normalization setting
       const normalizeCheckbox = document.getElementById(`${mode}NormalizeCase`);
-      if (normalizeCheckbox) {
-        normalizeCheckbox.checked = profile.normalizeCase || false;
+      if (normalizeCheckbox) normalizeCheckbox.checked = profile.normalizeCase || false;
+
+      // Apply phone normalization setting
+      const normalizePhoneCheckbox = document.getElementById(`${mode}NormalizePhone`);
+      if (normalizePhoneCheckbox) normalizePhoneCheckbox.checked = profile.normalizePhone || false;
+
+      // Apply exclude empty roles (exec only)
+      if (mode === 'exec') {
+        const excludeEmptyCheckbox = document.getElementById('execExcludeEmptyRoles');
+        if (excludeEmptyCheckbox) excludeEmptyCheckbox.checked = profile.excludeEmptyRoles || false;
       }
-      
+
+      // Apply Tags settings
+      const includeTagsCheckbox = document.getElementById(`${mode}MailchimpIncludeTags`);
+      if (includeTagsCheckbox) {
+        includeTagsCheckbox.checked = profile.mailchimp?.includeTags || false;
+        document.getElementById(`${mode}MailchimpTagsInput`).style.display =
+          profile.mailchimp?.includeTags ? 'block' : 'none';
+      }
+      const tagValueInput = document.getElementById(`${mode}MailchimpTagValue`);
+      if (tagValueInput) tagValueInput.value = profile.mailchimp?.tagValue || formatDate();
+
       // Apply preview normalization setting
       const previewCheckbox = document.getElementById(`${mode}PreviewNormalization`);
       if (previewCheckbox) {
@@ -2297,102 +2469,107 @@
     function exportCSV(mode) {
       const rawData = getSelectedData(mode);
       const headers = AppState.data[mode].selectedColumns;
-      
+
       if (headers.length === 0 || rawData.length === 0) {
         showMessage('No data to export', 'warning');
         return;
       }
-      
-      // Check if case normalization is enabled
-      const normalizeCheckbox = document.getElementById(`${mode}NormalizeCase`);
-      const shouldNormalize = normalizeCheckbox && normalizeCheckbox.checked;
-      
-      // Apply normalization if enabled
-      const data = applyNormalization(rawData, mode, shouldNormalize);
-      
+
+      const shouldNormalize = document.getElementById(`${mode}NormalizeCase`)?.checked || false;
+      const shouldNormalizePhone = document.getElementById(`${mode}NormalizePhone`)?.checked || false;
+
+      let data = applyNormalization(rawData, mode, shouldNormalize);
+
+      if (mode === 'exec' && document.getElementById('execExcludeEmptyRoles')?.checked) {
+        data = data.filter(row => row.Surname || row.GivenNames || row.Email || row.Phone || row.Mobile);
+      }
+
+      if (shouldNormalizePhone) {
+        data = applyPhoneNormalization(data);
+      }
+
       const rows = [
         headers.map(csvEscape).join(','),
         ...data.map(row => headers.map(h => csvEscape(row[h] || '')).join(','))
       ];
-      
+
       const csv = rows.join('\n');
       const normalizeText = shouldNormalize ? '_Normalized' : '';
       const filename = `MAAA_${AppState.currentState}_${mode === 'members' ? 'Member' : 'Executive'}_Database_Export${normalizeText}_${formatDate()}.csv`;
-      
+
       downloadFile(csv, filename, 'text/csv');
-      
-      const normalizeMessage = shouldNormalize ? ' (with name normalization)' : '';
-      showMessage(`Exported ${data.length} rows to ${filename}${normalizeMessage}`, 'success');
+      showMessage(`Exported ${data.length} rows to ${filename}${shouldNormalize ? ' (with name normalisation)' : ''}`, 'success');
     }
 
     function exportMailchimp(mode) {
-      const rawData = getFilteredData(mode); // Back to filtered data like before
-      
+      let rawData = getFilteredData(mode);
+
       const emailCol = document.getElementById(`${mode}MailchimpEmail`).value;
       if (!emailCol) {
         showMessage('Please select an email column for Mailchimp export', 'error');
         return;
       }
-      
+
+      // Exclude empty roles for exec mode if enabled
+      if (mode === 'exec' && document.getElementById('execExcludeEmptyRoles')?.checked) {
+        rawData = rawData.filter(row => row.Surname || row.GivenNames || row.Email || row.Phone || row.Mobile);
+      }
+
       const firstNameCol = document.getElementById(`${mode}MailchimpFirstName`).value;
       const lastNameCol = document.getElementById(`${mode}MailchimpLastName`).value;
       const phoneCol = document.getElementById(`${mode}MailchimpPhone`).value;
-      
-      // Check if case normalization is enabled
-      const normalizeCheckbox = document.getElementById(`${mode}NormalizeCase`);
-      const shouldNormalize = normalizeCheckbox && normalizeCheckbox.checked;
-      
-      // Apply normalization if enabled
-      const data = applyNormalization(rawData, mode, shouldNormalize);
-      
-      // Get selected columns - if none selected, use all available columns
+
+      const shouldNormalize = document.getElementById(`${mode}NormalizeCase`)?.checked || false;
+      const shouldNormalizePhone = document.getElementById(`${mode}NormalizePhone`)?.checked || false;
+
+      const includeTags = document.getElementById(`${mode}MailchimpIncludeTags`)?.checked || false;
+      const tagValue = includeTags ? (document.getElementById(`${mode}MailchimpTagValue`)?.value || formatDate()) : '';
+
+      let data = applyNormalization(rawData, mode, shouldNormalize);
+      if (shouldNormalizePhone) {
+        data = applyPhoneNormalization(data);
+      }
+
       let selectedColumns = AppState.data[mode].selectedColumns;
       if (selectedColumns.length === 0) {
         selectedColumns = AppState.data[mode].headers;
       }
-      
-      // Filter data to only include selected columns
+
       const filteredData = data.map(row => {
         const selectedRow = {};
-        selectedColumns.forEach(col => {
-          selectedRow[col] = row[col];
-        });
+        selectedColumns.forEach(col => { selectedRow[col] = row[col]; });
         return selectedRow;
       });
-      
-      // Create mapping of original columns to Mailchimp column names
+
       const columnMapping = {};
       if (emailCol && selectedColumns.includes(emailCol)) columnMapping[emailCol] = 'Email Address';
-      if (firstNameCol && selectedColumns.includes(firstNameCol)) columnMapping[firstNameCol] = 'First Name'; 
+      if (firstNameCol && selectedColumns.includes(firstNameCol)) columnMapping[firstNameCol] = 'First Name';
       if (lastNameCol && selectedColumns.includes(lastNameCol)) columnMapping[lastNameCol] = 'Last Name';
       if (phoneCol && selectedColumns.includes(phoneCol)) columnMapping[phoneCol] = 'Phone';
-      
-      // Create headers with Mailchimp names for mapped columns, original names for others
-      const headers = selectedColumns.map(col => columnMapping[col] || col);
-      
-      // Transform data to use Mailchimp column names while keeping all selected columns
+
+      let headers = selectedColumns.map(col => columnMapping[col] || col);
+      if (includeTags) headers = [...headers, 'Tags'];
+
       const mailchimpData = filteredData.map(row => {
         const transformedRow = {};
         selectedColumns.forEach(col => {
-          const headerName = columnMapping[col] || col;
-          transformedRow[headerName] = row[col] || '';
+          transformedRow[columnMapping[col] || col] = row[col] || '';
         });
+        if (includeTags) transformedRow['Tags'] = tagValue;
         return transformedRow;
       });
-      
+
       const rows = [
         headers.map(csvEscape).join(','),
         ...mailchimpData.map(row => headers.map(h => csvEscape(row[h])).join(','))
       ];
-      
+
       const csv = rows.join('\n');
       const normalizeText = shouldNormalize ? '_Normalized' : '';
       const filename = `MAAA_${AppState.currentState}_${mode === 'members' ? 'Member' : 'Executive'}_Mailchimp_Export${normalizeText}_${formatDate()}.csv`;
-      
+
       downloadFile(csv, filename, 'text/csv');
-      
-      const normalizeMessage = shouldNormalize ? ' (with name normalization)' : '';
-      showMessage(`Exported ${mailchimpData.length} rows with ${headers.length} columns to Mailchimp format${normalizeMessage}`, 'success');
+      showMessage(`Exported ${mailchimpData.length} rows with ${headers.length} columns to Mailchimp format${shouldNormalize ? ' (with name normalisation)' : ''}`, 'success');
     }
 
     function exportWorkspace() {
@@ -2575,6 +2752,11 @@
           applyProfile(mode);
         });
         
+        // Tags checkbox toggle
+        document.getElementById(`${mode}MailchimpIncludeTags`).addEventListener('change', function() {
+          document.getElementById(`${mode}MailchimpTagsInput`).style.display = this.checked ? 'block' : 'none';
+        });
+
         // Preview normalization controls
         document.getElementById(`${mode}PreviewNormalization`).addEventListener('change', function() {
           AppState.data[mode].previewNormalization = this.checked;
@@ -2671,7 +2853,12 @@
       // Initialize UI
       updatePageTitles();
       updateProfileDropdowns();
-      
+
+      // Set today's date as default tag value
+      const todayTag = formatDate();
+      document.getElementById('membersMailchimpTagValue').value = todayTag;
+      document.getElementById('execMailchimpTagValue').value = todayTag;
+
       // Show welcome message
       showMessage('MAAA Database Manager loaded successfully. Upload a CSV file to get started.', 'info');
     });
