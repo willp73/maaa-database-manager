@@ -902,6 +902,30 @@
             </div>
             <button class="btn btn-primary" id="execExportCsv">Export Selected Data</button>
           </div>
+
+          <!-- Club Register Export Section -->
+          <div class="control-section" id="execClubRegisterSection" style="display: none;">
+            <h3 class="section-title">Club Register Export</h3>
+            <p style="font-size: 0.8125rem; color: var(--text-muted); margin-bottom: 0.75rem;">
+              Exports one row per club (no role expansion) — use this for Monday.com board mirroring or any system that needs a flat club list.
+            </p>
+            <div class="mb-1">
+              <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.875rem; margin-bottom: 0.5rem;">
+                <input type="checkbox" id="execClubRegNormalizeCase">
+                Normalize club name capitalization (Proper Case)
+              </label>
+              <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.875rem; margin-bottom: 1rem;">
+                <input type="checkbox" id="execClubRegNormalizePhone">
+                Normalize phone number format (Australian)
+              </label>
+            </div>
+            <div style="display: flex; gap: 0.5rem; margin-bottom: 0.75rem;">
+              <button class="btn" id="execClubRegSelectAll">Select All</button>
+              <button class="btn" id="execClubRegSelectNone">Select None</button>
+            </div>
+            <div class="column-grid" id="execClubRegColumnGrid"></div>
+            <button class="btn btn-primary" id="execExportClubRegister" style="margin-top: 0.75rem;">Export Club Register</button>
+          </div>
         </div>
 
         <!-- Summary Section -->
@@ -955,6 +979,7 @@
 
         <h4>Changelog:</h4>
         <ul>
+          <li><strong>1.2.0</strong> - Club Register Export: one-row-per-club export for Monday.com board mirroring, with its own column selector</li>
           <li><strong>1.1.0</strong> - Field trimming on ingest; FirstName auto-extraction; phone normalisation; role-based email detection; MailChimp Tags column; exec empty role exclusion</li>
           <li><strong>1.0.2</strong> - Added name normalization preview and detailed summary</li>
           <li><strong>1.0.1</strong> - Fixed profile saving functionality</li>
@@ -970,7 +995,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
   <script>
     // Application state
-    const APP_VERSION = '1.1.0';
+    const APP_VERSION = '1.2.0';
     const APP_BUILD_DATE = '2026-06-23';
 
     const ROLE_BASED_PREFIXES = [
@@ -1003,6 +1028,7 @@
           processed: [],
           headers: [],
           selectedColumns: [],
+          clubRegisterColumns: [],
           filter: { column: null, values: new Set() },
           sort: { column: null, direction: null },
           previewNormalization: false
@@ -1165,6 +1191,7 @@
             },
             exec: {
               selectedColumns: AppState.data.exec.selectedColumns,
+              clubRegisterColumns: AppState.data.exec.clubRegisterColumns,
               filter: {
                 column: AppState.data.exec.filter.column,
                 values: Array.from(AppState.data.exec.filter.values)
@@ -1220,6 +1247,7 @@
           
           if (data.data.exec) {
             AppState.data.exec.selectedColumns = data.data.exec.selectedColumns || [];
+            AppState.data.exec.clubRegisterColumns = data.data.exec.clubRegisterColumns || [];
             AppState.data.exec.filter = {
               column: data.data.exec.filter?.column || null,
               values: new Set(data.data.exec.filter?.values || [])
@@ -2022,6 +2050,9 @@
       document.getElementById(`${mode}FilterSection`).style.display = 'block';
       document.getElementById(`${mode}MailchimpSection`).style.display = 'block';
       document.getElementById(`${mode}ExportSection`).style.display = 'block';
+      if (mode === 'exec') {
+        document.getElementById('execClubRegisterSection').style.display = 'block';
+      }
     }
 
     // Profile Management
@@ -2572,6 +2603,118 @@
       showMessage(`Exported ${mailchimpData.length} rows with ${headers.length} columns to Mailchimp format${shouldNormalize ? ' (with name normalisation)' : ''}`, 'success');
     }
 
+    // Club Register Export helpers
+    const CLUB_REG_DEFAULTS = ['ClubID', 'ClubName', 'NickName', 'ClubType', 'TypeName', 'MemberCount', 'StateID'];
+    const CLUB_REG_NAME_COLS = ['ClubName', 'NickName', 'BodyName', 'FieldName', 'Description', 'MeetingPlace'];
+    const TYPE_NAMES = { '0': 'Undefined', '1': 'Metro', '2': 'Country' };
+    const EXEC_PREFIXES = ['Pres', 'Sec', 'Reg'];
+
+    function getClubRegisterHeaders(rawData) {
+      if (!rawData || rawData.length === 0) return [];
+      return Object.keys(rawData[0])
+        .filter(key => !EXEC_PREFIXES.some(p => key.startsWith(p)))
+        .map(key => key === 'FullName' ? 'ClubName' : key);
+    }
+
+    function getClubRegisterData() {
+      const raw = AppState.data.exec.raw;
+      if (!raw || raw.length === 0) return [];
+      return raw.map(row => {
+        const newRow = {};
+        Object.keys(row).forEach(key => {
+          if (EXEC_PREFIXES.some(p => key.startsWith(p))) return;
+          newRow[key === 'FullName' ? 'ClubName' : key] = row[key];
+        });
+        if (!newRow.TypeName) {
+          newRow.TypeName = TYPE_NAMES[String(newRow.ClubType)] || '';
+        }
+        return newRow;
+      });
+    }
+
+    function updateClubRegisterGrid() {
+      const raw = AppState.data.exec.raw;
+      if (!raw || raw.length === 0) return;
+
+      const headers = getClubRegisterHeaders(raw);
+
+      if (AppState.data.exec.clubRegisterColumns.length === 0) {
+        AppState.data.exec.clubRegisterColumns = CLUB_REG_DEFAULTS.filter(col => headers.includes(col));
+      }
+
+      const grid = document.getElementById('execClubRegColumnGrid');
+      grid.innerHTML = '';
+
+      headers.forEach(header => {
+        const item = document.createElement('div');
+        item.className = 'column-item';
+
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.id = `execClubReg_col_${header}`;
+        checkbox.checked = AppState.data.exec.clubRegisterColumns.includes(header);
+        checkbox.addEventListener('change', (e) => {
+          if (e.target.checked) {
+            if (!AppState.data.exec.clubRegisterColumns.includes(header)) {
+              AppState.data.exec.clubRegisterColumns.push(header);
+            }
+          } else {
+            const idx = AppState.data.exec.clubRegisterColumns.indexOf(header);
+            if (idx > -1) AppState.data.exec.clubRegisterColumns.splice(idx, 1);
+          }
+          saveToStorage();
+        });
+
+        const label = document.createElement('label');
+        label.textContent = header;
+        label.htmlFor = checkbox.id;
+
+        item.appendChild(checkbox);
+        item.appendChild(label);
+        grid.appendChild(item);
+      });
+    }
+
+    function exportClubRegister() {
+      const headers = AppState.data.exec.clubRegisterColumns;
+      if (headers.length === 0) {
+        showMessage('Please select at least one column for the club register export', 'warning');
+        return;
+      }
+
+      let data = getClubRegisterData();
+      if (data.length === 0) {
+        showMessage('No club data available — please load a CSV file first', 'warning');
+        return;
+      }
+
+      const shouldNormalize = document.getElementById('execClubRegNormalizeCase')?.checked || false;
+      const shouldNormalizePhone = document.getElementById('execClubRegNormalizePhone')?.checked || false;
+
+      if (shouldNormalize) {
+        data = data.map(row => {
+          const r = { ...row };
+          CLUB_REG_NAME_COLS.forEach(col => {
+            if (r[col]) r[col] = normalizeProperCase(r[col]);
+          });
+          return r;
+        });
+      }
+
+      if (shouldNormalizePhone) {
+        data = applyPhoneNormalization(data);
+      }
+
+      const rows = [
+        headers.map(csvEscape).join(','),
+        ...data.map(row => headers.map(h => csvEscape(row[h] || '')).join(','))
+      ];
+
+      const filename = `MAAA_${AppState.currentState}_Club_Register_${formatDate()}.csv`;
+      downloadFile(rows.join('\n'), filename, 'text/csv');
+      showMessage(`Exported ${data.length} clubs to ${filename}`, 'success');
+    }
+
     function exportWorkspace() {
       const workspace = {
         version: APP_VERSION,
@@ -2712,6 +2855,7 @@
           updateFilterSection('exec');
           updateMailchimpSection('exec');
           updateDataTable('exec');
+          updateClubRegisterGrid();
           showDataSections('exec');
           
           showMessage(`Loaded ${result.raw.length} club records expanded to ${result.processed.length} executive records with ${result.headers.length} columns`, 'success');
@@ -2824,6 +2968,20 @@
         document.getElementById(`${mode}ExportMailchimp`).addEventListener('click', () => exportMailchimp(mode));
       });
       
+      // Club Register Export
+      document.getElementById('execClubRegSelectAll').addEventListener('click', () => {
+        const headers = getClubRegisterHeaders(AppState.data.exec.raw);
+        AppState.data.exec.clubRegisterColumns = [...headers];
+        document.querySelectorAll('#execClubRegColumnGrid input[type="checkbox"]').forEach(cb => cb.checked = true);
+        saveToStorage();
+      });
+      document.getElementById('execClubRegSelectNone').addEventListener('click', () => {
+        AppState.data.exec.clubRegisterColumns = [];
+        document.querySelectorAll('#execClubRegColumnGrid input[type="checkbox"]').forEach(cb => cb.checked = false);
+        saveToStorage();
+      });
+      document.getElementById('execExportClubRegister').addEventListener('click', exportClubRegister);
+
       // Workspace management
       document.getElementById('exportWorkspaceBtn').addEventListener('click', exportWorkspace);
       document.getElementById('importWorkspaceBtn').addEventListener('click', importWorkspace);
