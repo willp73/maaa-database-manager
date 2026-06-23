@@ -1,0 +1,2706 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MAAA Database Manager</title>
+  <style>
+    :root {
+      /* Global colors */
+      --border: #e5e7eb;
+      --text: #1f2937;
+      --text-muted: #6b7280;
+      --bg: #ffffff;
+      --bg-soft: #f9fafb;
+      
+      /* Members theme - light green */
+      --members-primary: #10b981;
+      --members-primary-soft: #d1fae5;
+      --members-primary-light: #f0fdf4;
+      --members-accent: #065f46;
+      
+      /* Executives theme - pale yellow */
+      --exec-primary: #f59e0b;
+      --exec-primary-soft: #fef3c7;
+      --exec-primary-light: #fffbeb;
+      --exec-accent: #92400e;
+      
+      /* Status colors */
+      --success: #10b981;
+      --warning: #f59e0b;
+      --error: #ef4444;
+      --info: #3b82f6;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      line-height: 1.6;
+      color: var(--text);
+      background: var(--bg-soft);
+    }
+
+    /* Layout */
+    .app-container {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Header */
+    .header {
+      background: var(--bg);
+      border-bottom: 1px solid var(--border);
+      padding: 1rem 2rem;
+    }
+
+    .header-content {
+      max-width: 1400px;
+      margin: 0 auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+
+    .logo-area {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .logo {
+      font-size: 1.5rem;
+      font-weight: bold;
+      color: var(--text);
+    }
+
+    .state-selector select {
+      padding: 0.5rem;
+      border: 1px solid var(--border);
+      border-radius: 0.375rem;
+      font-size: 0.875rem;
+      background: var(--bg);
+    }
+
+    .mode-tabs {
+      display: flex;
+      background: var(--bg-soft);
+      border: 1px solid var(--border);
+      border-radius: 0.5rem;
+      overflow: hidden;
+    }
+
+    .mode-tab {
+      background: none;
+      border: none;
+      padding: 0.5rem 1rem;
+      cursor: pointer;
+      font-size: 0.875rem;
+      transition: all 0.2s;
+    }
+
+    .mode-tab.active {
+      background: var(--theme-primary);
+      color: white;
+    }
+
+    .header-actions {
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    .btn {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      padding: 0.5rem 1rem;
+      border-radius: 0.375rem;
+      cursor: pointer;
+      font-size: 0.875rem;
+      transition: all 0.2s;
+    }
+
+    .btn:hover {
+      background: var(--bg-soft);
+    }
+
+    .btn-primary {
+      background: var(--theme-primary);
+      color: white;
+      border-color: var(--theme-primary);
+    }
+
+    .btn-primary:hover {
+      opacity: 0.9;
+    }
+
+    /* Main content */
+    .main-content {
+      flex: 1;
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 2rem;
+      width: 100%;
+    }
+
+    /* Page header */
+    .page-header {
+      background: var(--theme-light);
+      border: 1px solid var(--theme-primary);
+      border-radius: 0.5rem;
+      padding: 1.5rem;
+      margin-bottom: 2rem;
+    }
+
+    .page-title {
+      font-size: 1.75rem;
+      font-weight: bold;
+      color: var(--theme-accent);
+      margin-bottom: 0.5rem;
+    }
+
+    .page-subtitle {
+      color: var(--text-muted);
+    }
+
+    /* Control panels */
+    .control-panel {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 0.5rem;
+      padding: 1.5rem;
+      margin-bottom: 2rem;
+    }
+
+    .control-section {
+      margin-bottom: 1.5rem;
+    }
+
+    .control-section:last-child {
+      margin-bottom: 0;
+    }
+
+    .section-title {
+      font-size: 1rem;
+      font-weight: 600;
+      margin-bottom: 1rem;
+      color: var(--theme-accent);
+    }
+
+    /* File upload */
+    .file-upload {
+      border: 2px dashed var(--border);
+      border-radius: 0.5rem;
+      padding: 1rem;
+      text-align: center;
+      transition: all 0.2s;
+    }
+
+    .file-upload:hover {
+      border-color: var(--theme-primary);
+      background: var(--theme-light);
+    }
+
+    .file-input {
+      margin-bottom: 0.5rem;
+    }
+
+    .file-info {
+      font-size: 0.875rem;
+      color: var(--text-muted);
+    }
+
+    /* Profile management */
+    .profile-controls {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .profile-select {
+      flex: 1;
+      min-width: 200px;
+      padding: 0.5rem;
+      border: 1px solid var(--border);
+      border-radius: 0.375rem;
+      background: var(--bg);
+    }
+
+    /* Column selection */
+    .column-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 0.5rem;
+      max-height: 300px;
+      overflow-y: auto;
+      border: 1px solid var(--border);
+      border-radius: 0.375rem;
+      padding: 1rem;
+      background: var(--bg);
+    }
+
+    .column-item {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.25rem;
+    }
+
+    .column-item input[type="checkbox"] {
+      margin: 0;
+    }
+
+    .column-item label {
+      font-size: 0.875rem;
+      cursor: pointer;
+    }
+
+    /* Filter section */
+    .filter-section {
+      border: 1px solid var(--border);
+      border-radius: 0.5rem;
+      padding: 1rem;
+      background: var(--bg-soft);
+    }
+
+    .filter-controls {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .filter-values {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 0.5rem;
+      max-height: 200px;
+      overflow-y: auto;
+      padding: 0.5rem;
+      border: 1px solid var(--border);
+      border-radius: 0.375rem;
+      background: var(--bg);
+    }
+
+    .filter-value-item {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.875rem;
+    }
+
+    /* Summary cards */
+    .summary-section {
+      margin-bottom: 2rem;
+    }
+
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+      margin-bottom: 1rem;
+    }
+
+    .summary-card {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 0.5rem;
+      padding: 1rem;
+      text-align: center;
+    }
+
+    .summary-card.success {
+      border-left: 4px solid var(--success);
+    }
+
+    .summary-card.warning {
+      border-left: 4px solid var(--warning);
+    }
+
+    .summary-card.error {
+      border-left: 4px solid var(--error);
+    }
+
+    .summary-number {
+      font-size: 2rem;
+      font-weight: bold;
+      margin-bottom: 0.25rem;
+    }
+
+    .summary-label {
+      font-size: 0.875rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    /* Detailed summary */
+    .detailed-summary {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+
+    .summary-detail-card {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 0.5rem;
+      overflow: hidden;
+    }
+
+    .summary-detail-card.error {
+      border-left: 4px solid var(--error);
+    }
+
+    .summary-detail-card.warning {
+      border-left: 4px solid var(--warning);
+    }
+
+    .detail-header {
+      padding: 1rem;
+      background: var(--bg-soft);
+      font-weight: 600;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .detail-content {
+      max-height: 200px;
+      overflow-y: auto;
+    }
+
+    .detail-item {
+      padding: 0.5rem 1rem;
+      font-size: 0.875rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .detail-item:last-child {
+      border-bottom: none;
+    }
+
+    /* Data table */
+    .data-table-container {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 0.5rem;
+      overflow: hidden;
+    }
+
+    .table-controls {
+      padding: 1rem;
+      background: var(--bg-soft);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .data-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .data-table th,
+    .data-table td {
+      padding: 0.75rem;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+      font-size: 0.875rem;
+    }
+
+    .data-table th {
+      background: var(--bg-soft);
+      font-weight: 600;
+      position: sticky;
+      top: 0;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .data-table th:hover {
+      background: var(--theme-soft);
+    }
+
+    .data-table th.sorted-asc::after {
+      content: ' ↑';
+    }
+
+    .data-table th.sorted-desc::after {
+      content: ' ↓';
+    }
+
+    .data-table tr:hover {
+      background: var(--bg-soft);
+    }
+
+    .data-table tr.duplicate-email {
+      background: #fef2f2;
+    }
+
+    .data-table tr.invalid-email {
+      background: #fffbeb;
+    }
+
+    .data-table tr.missing-role {
+      background: #fef2f2;
+    }
+
+    /* Mailchimp section */
+    .mailchimp-section {
+      border: 1px solid var(--info);
+      border-radius: 0.5rem;
+      padding: 1rem;
+      background: #eff6ff;
+    }
+
+    .mailchimp-mappings {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+      margin-bottom: 1rem;
+    }
+
+    .mapping-item {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+    }
+
+    .mapping-item label {
+      font-size: 0.875rem;
+      font-weight: 500;
+    }
+
+    .mapping-item select {
+      padding: 0.5rem;
+      border: 1px solid var(--border);
+      border-radius: 0.375rem;
+      background: var(--bg);
+    }
+
+    /* Messages */
+    .message {
+      padding: 1rem;
+      border-radius: 0.5rem;
+      margin-bottom: 1rem;
+      border-left: 4px solid;
+    }
+
+    .message.success {
+      background: #f0fdf4;
+      border-color: var(--success);
+      color: #166534;
+    }
+
+    .message.warning {
+      background: #fffbeb;
+      border-color: var(--warning);
+      color: #92400e;
+    }
+
+    .message.error {
+      background: #fef2f2;
+      border-color: var(--error);
+      color: #991b1b;
+    }
+
+    .message.info {
+      background: #eff6ff;
+      border-color: var(--info);
+      color: #1d4ed8;
+    }
+
+    /* Utility classes */
+    .hidden {
+      display: none !important;
+    }
+
+    .text-center {
+      text-align: center;
+    }
+
+    .text-muted {
+      color: var(--text-muted);
+    }
+
+    .mb-1 { margin-bottom: 0.5rem; }
+    .mb-2 { margin-bottom: 1rem; }
+    .mr-2 { margin-right: 1rem; }
+
+    /* Theme switching */
+    body.theme-members {
+      --theme-primary: var(--members-primary);
+      --theme-primary-soft: var(--members-primary-soft);
+      --theme-light: var(--members-primary-light);
+      --theme-accent: var(--members-accent);
+      --theme-soft: var(--members-primary-soft);
+    }
+
+    body.theme-exec {
+      --theme-primary: var(--exec-primary);
+      --theme-primary-soft: var(--exec-primary-soft);
+      --theme-light: var(--exec-primary-light);
+      --theme-accent: var(--exec-accent);
+      --theme-soft: var(--exec-primary-soft);
+    }
+
+    /* Modal */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+    }
+
+    .modal {
+      background: var(--bg);
+      border-radius: 0.5rem;
+      padding: 2rem;
+      max-width: 600px;
+      max-height: 80vh;
+      overflow-y: auto;
+      margin: 1rem;
+    }
+
+    .modal-header {
+      font-size: 1.25rem;
+      font-weight: bold;
+      margin-bottom: 1rem;
+    }
+
+    .modal-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 0.5rem;
+      margin-top: 1rem;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .header-content {
+        flex-direction: column;
+        text-align: center;
+      }
+
+      .main-content {
+        padding: 1rem;
+      }
+
+      .column-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .summary-grid {
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      }
+
+      .detailed-summary {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body class="theme-members">
+  <div class="app-container">
+    <!-- Header -->
+    <header class="header">
+      <div class="header-content">
+        <div class="logo-area">
+          <div class="logo">MAAA Database Manager</div>
+          <div class="state-selector">
+            <select id="stateSelect">
+              <option value="AU">AU</option>
+              <option value="ACT">ACT</option>
+              <option value="NSW">NSW</option>
+              <option value="NT">NT</option>
+              <option value="QLD" selected>QLD</option>
+              <option value="SA">SA</option>
+              <option value="TAS">TAS</option>
+              <option value="WA">WA</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="mode-tabs">
+          <button class="mode-tab active" data-mode="members">Members</button>
+          <button class="mode-tab" data-mode="exec">Executives</button>
+        </div>
+
+        <div class="header-actions">
+          <button class="btn" id="aboutBtn">About</button>
+          <button class="btn" id="exportWorkspaceBtn">Export Workspace</button>
+          <button class="btn" id="importWorkspaceBtn">Import Workspace</button>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      <div id="messageContainer"></div>
+
+      <!-- Members View -->
+      <div id="membersView">
+        <div class="page-header">
+          <h1 class="page-title" id="membersTitle">QLD Membership Data Management</h1>
+          <p class="page-subtitle">Upload and manage individual member records</p>
+        </div>
+
+        <div class="control-panel">
+          <!-- File Upload -->
+          <div class="control-section">
+            <h3 class="section-title">Data Import</h3>
+            <div class="file-upload">
+              <input type="file" id="membersFileInput" accept=".csv" class="file-input">
+              <div class="file-info">Upload CSV file (max 50MB)</div>
+            </div>
+          </div>
+
+          <!-- Profile Management -->
+          <div class="control-section" id="membersProfileSection" style="display: none;">
+            <h3 class="section-title">Profile Management</h3>
+            <div class="profile-controls">
+              <select class="profile-select" id="membersProfileSelect">
+                <option value="">-- Select Profile --</option>
+              </select>
+              <button class="btn btn-primary" id="membersProfileSave">Save</button>
+              <button class="btn" id="membersProfileSaveAs">Save As...</button>
+              <button class="btn" id="membersProfileDelete" disabled>Delete</button>
+              <button class="btn" id="membersProfileApply" disabled>Apply</button>
+            </div>
+          </div>
+
+          <!-- Column Selection -->
+          <div class="control-section" id="membersColumnSection" style="display: none;">
+            <h3 class="section-title">Column Selection</h3>
+            <div class="mb-1">
+              <button class="btn" id="membersSelectAll">Select All</button>
+              <button class="btn" id="membersSelectNone">Select None</button>
+            </div>
+            <div class="column-grid" id="membersColumnGrid"></div>
+          </div>
+
+          <!-- Filter Section -->
+          <div class="control-section" id="membersFilterSection" style="display: none;">
+            <h3 class="section-title">Filter by Column</h3>
+            <div class="filter-section">
+              <div class="filter-controls">
+                <select id="membersFilterColumn">
+                  <option value="">-- Select Column --</option>
+                </select>
+                <button class="btn" id="membersFilterSelectAll">Select All</button>
+                <button class="btn" id="membersFilterSelectNone">Select None</button>
+                <button class="btn btn-primary" id="membersFilterApply">Apply Filter</button>
+                <button class="btn" id="membersFilterClear">Clear Filter</button>
+              </div>
+              <div class="filter-values" id="membersFilterValues"></div>
+            </div>
+          </div>
+
+          <!-- Mailchimp Section -->
+          <div class="control-section" id="membersMailchimpSection" style="display: none;">
+            <h3 class="section-title">Mailchimp Export</h3>
+            <div class="mailchimp-section">
+              <div class="mailchimp-mappings">
+                <div class="mapping-item">
+                  <label>Email Address *</label>
+                  <select id="membersMailchimpEmail"></select>
+                </div>
+                <div class="mapping-item">
+                  <label>First Name</label>
+                  <select id="membersMailchimpFirstName"></select>
+                </div>
+                <div class="mapping-item">
+                  <label>Last Name</label>
+                  <select id="membersMailchimpLastName"></select>
+                </div>
+                <div class="mapping-item">
+                  <label>Phone</label>
+                  <select id="membersMailchimpPhone"></select>
+                </div>
+              </div>
+              <button class="btn btn-primary" id="membersExportMailchimp">Export Mailchimp CSV</button>
+            </div>
+          </div>
+
+          <!-- Export Section -->
+          <div class="control-section" id="membersExportSection" style="display: none;">
+            <h3 class="section-title">Export Data</h3>
+            <div class="mb-1">
+              <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.875rem; margin-bottom: 1rem;">
+                <input type="checkbox" id="membersNormalizeCase">
+                Normalize name capitalization (Proper Case for Given Names and Surnames)
+              </label>
+            </div>
+            <button class="btn btn-primary" id="membersExportCsv">Export Selected Data</button>
+          </div>
+        </div>
+
+        <!-- Summary Section -->
+        <div class="summary-section" id="membersSummarySection" style="display: none;">
+          <h3 class="section-title">Data Summary</h3>
+          <div class="summary-grid" id="membersSummaryGrid"></div>
+          <div class="detailed-summary" id="membersDetailedSummary"></div>
+        </div>
+
+        <!-- Data Table -->
+        <div class="data-table-container" id="membersTableContainer" style="display: none;">
+          <div class="table-controls">
+            <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.875rem;">
+              <input type="checkbox" id="membersPreviewNormalization">
+              Preview name normalization in table
+            </label>
+            <button class="btn" id="membersApplyPreview">Apply Preview</button>
+          </div>
+          <table class="data-table">
+            <thead id="membersTableHead"></thead>
+            <tbody id="membersTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Executives View -->
+      <div id="execView" style="display: none;">
+        <div class="page-header">
+          <h1 class="page-title" id="execTitle">QLD Club Executives Data Management</h1>
+          <p class="page-subtitle">Upload and manage club executive records</p>
+        </div>
+
+        <div class="control-panel">
+          <!-- File Upload -->
+          <div class="control-section">
+            <h3 class="section-title">Data Import</h3>
+            <div class="file-upload">
+              <input type="file" id="execFileInput" accept=".csv" class="file-input">
+              <div class="file-info">Upload CSV file (max 50MB)</div>
+            </div>
+          </div>
+
+          <!-- Profile Management -->
+          <div class="control-section" id="execProfileSection" style="display: none;">
+            <h3 class="section-title">Profile Management</h3>
+            <div class="profile-controls">
+              <select class="profile-select" id="execProfileSelect">
+                <option value="">-- Select Profile --</option>
+              </select>
+              <button class="btn btn-primary" id="execProfileSave">Save</button>
+              <button class="btn" id="execProfileSaveAs">Save As...</button>
+              <button class="btn" id="execProfileDelete" disabled>Delete</button>
+              <button class="btn" id="execProfileApply" disabled>Apply</button>
+            </div>
+          </div>
+
+          <!-- Column Selection -->
+          <div class="control-section" id="execColumnSection" style="display: none;">
+            <h3 class="section-title">Column Selection</h3>
+            <div class="mb-1">
+              <button class="btn" id="execSelectAll">Select All</button>
+              <button class="btn" id="execSelectNone">Select None</button>
+            </div>
+            <div class="column-grid" id="execColumnGrid"></div>
+          </div>
+
+          <!-- Filter Section -->
+          <div class="control-section" id="execFilterSection" style="display: none;">
+            <h3 class="section-title">Filter by Column</h3>
+            <div class="filter-section">
+              <div class="filter-controls">
+                <select id="execFilterColumn">
+                  <option value="">-- Select Column --</option>
+                </select>
+                <button class="btn" id="execFilterSelectAll">Select All</button>
+                <button class="btn" id="execFilterSelectNone">Select None</button>
+                <button class="btn btn-primary" id="execFilterApply">Apply Filter</button>
+                <button class="btn" id="execFilterClear">Clear Filter</button>
+              </div>
+              <div class="filter-values" id="execFilterValues"></div>
+            </div>
+          </div>
+
+          <!-- Mailchimp Section -->
+          <div class="control-section" id="execMailchimpSection" style="display: none;">
+            <h3 class="section-title">Mailchimp Export</h3>
+            <div class="mailchimp-section">
+              <div class="mailchimp-mappings">
+                <div class="mapping-item">
+                  <label>Email Address *</label>
+                  <select id="execMailchimpEmail"></select>
+                </div>
+                <div class="mapping-item">
+                  <label>First Name</label>
+                  <select id="execMailchimpFirstName"></select>
+                </div>
+                <div class="mapping-item">
+                  <label>Last Name</label>
+                  <select id="execMailchimpLastName"></select>
+                </div>
+                <div class="mapping-item">
+                  <label>Phone</label>
+                  <select id="execMailchimpPhone"></select>
+                </div>
+              </div>
+              <button class="btn btn-primary" id="execExportMailchimp">Export Mailchimp CSV</button>
+            </div>
+          </div>
+
+          <!-- Export Section -->
+          <div class="control-section" id="execExportSection" style="display: none;">
+            <h3 class="section-title">Export Data</h3>
+            <div class="mb-1">
+              <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.875rem; margin-bottom: 1rem;">
+                <input type="checkbox" id="execNormalizeCase">
+                Normalize name capitalization (Proper Case for Given Names and Surnames)
+              </label>
+            </div>
+            <button class="btn btn-primary" id="execExportCsv">Export Selected Data</button>
+          </div>
+        </div>
+
+        <!-- Summary Section -->
+        <div class="summary-section" id="execSummarySection" style="display: none;">
+          <h3 class="section-title">Data Summary</h3>
+          <div class="summary-grid" id="execSummaryGrid"></div>
+          <div class="detailed-summary" id="execDetailedSummary"></div>
+        </div>
+
+        <!-- Data Table -->
+        <div class="data-table-container" id="execTableContainer" style="display: none;">
+          <div class="table-controls">
+            <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.875rem;">
+              <input type="checkbox" id="execPreviewNormalization">
+              Preview name normalization in table
+            </label>
+            <button class="btn" id="execApplyPreview">Apply Preview</button>
+          </div>
+          <table class="data-table">
+            <thead id="execTableHead"></thead>
+            <tbody id="execTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Hidden file input for workspace import -->
+  <input type="file" id="workspaceImportInput" accept=".json" style="display: none;">
+
+  <!-- About Modal -->
+  <div id="aboutModal" class="modal-overlay" style="display: none;">
+    <div class="modal">
+      <div class="modal-header">About MAAA Database Manager</div>
+      <div>
+        <p><strong>Version:</strong> <span id="aboutVersion">1.0.2</span></p>
+        <p><strong>Build Date:</strong> <span id="aboutDate">2025-08-24</span></p>
+        <p><strong>Purpose:</strong> Data management tool for Model Aeronautical Association of Australia state branches.</p>
+        
+        <h4>Features:</h4>
+        <ul>
+          <li>Unified member and executive data management</li>
+          <li>Advanced filtering and sorting capabilities</li>
+          <li>Mailchimp export integration</li>
+          <li>Profile management with workspace import/export</li>
+          <li>Data quality analysis and reporting</li>
+          <li>Session persistence across browser restarts</li>
+          <li>Name normalization with live preview</li>
+          <li>Detailed data quality summaries</li>
+        </ul>
+
+        <h4>Changelog:</h4>
+        <ul>
+          <li><strong>1.0.2</strong> - Added name normalization preview and detailed summary</li>
+          <li><strong>1.0.1</strong> - Fixed profile saving functionality</li>
+          <li><strong>1.0.0</strong> - Initial release with complete feature set</li>
+        </ul>
+      </div>
+      <div class="modal-actions">
+        <button class="btn" id="aboutClose">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+  <script>
+    // Application state
+    const APP_VERSION = '1.0.2';
+    const APP_BUILD_DATE = '2025-08-24';
+    
+    const AppState = {
+      currentMode: 'members',
+      currentState: 'QLD',
+      data: {
+        members: {
+          raw: [],
+          processed: [],
+          headers: [],
+          selectedColumns: [],
+          filter: { column: null, values: new Set() },
+          sort: { column: null, direction: null },
+          previewNormalization: false
+        },
+        exec: {
+          raw: [],
+          processed: [],
+          headers: [],
+          selectedColumns: [],
+          filter: { column: null, values: new Set() },
+          sort: { column: null, direction: null },
+          previewNormalization: false
+        }
+      },
+      profiles: {
+        members: {},
+        exec: {}
+      }
+    };
+
+    // Utility functions
+    function showMessage(text, type = 'info') {
+      const container = document.getElementById('messageContainer');
+      const message = document.createElement('div');
+      message.className = `message ${type}`;
+      message.textContent = text;
+      container.appendChild(message);
+      
+      if (type !== 'error') {
+        setTimeout(() => {
+          if (message.parentNode) {
+            message.parentNode.removeChild(message);
+          }
+        }, 5000);
+      }
+    }
+
+    function formatDate(date = new Date()) {
+      return date.toISOString().slice(0, 10).replace(/-/g, '');
+    }
+
+    function isValidEmail(email) {
+      if (!email || typeof email !== 'string') return false;
+      const trimmed = email.trim();
+      if (!trimmed) return false;
+      return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed);
+    }
+
+    function csvEscape(value) {
+      if (value == null) return '';
+      const str = String(value);
+      if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+        return '"' + str.replace(/"/g, '""') + '"';
+      }
+      return str;
+    }
+
+    // Case normalization function
+    function normalizeProperCase(text) {
+      if (!text || typeof text !== 'string') return text;
+      
+      return text.trim()
+        .toLowerCase()
+        .split(' ')
+        .map(word => {
+          if (word.length === 0) return word;
+          
+          // Handle hyphenated names (e.g., "mary-jane" -> "Mary-Jane")
+          if (word.includes('-')) {
+            return word.split('-')
+              .map(part => part.charAt(0).toUpperCase() + part.slice(1))
+              .join('-');
+          }
+          
+          // Handle apostrophes (e.g., "o'connor" -> "O'Connor")
+          if (word.includes("'")) {
+            return word.split("'")
+              .map(part => part.charAt(0).toUpperCase() + part.slice(1))
+              .join("'");
+          }
+          
+          // Regular capitalization
+          return word.charAt(0).toUpperCase() + word.slice(1);
+        })
+        .join(' ');
+    }
+
+    // Apply case normalization to data if enabled
+    function applyNormalization(data, mode, normalize) {
+      if (!normalize) return data;
+      
+      const nameColumns = ['GivenNames', 'Surname', 'SurName', 'FirstName', 'LastName', 'Given Names', 'Sur Name'];
+      
+      return data.map(row => {
+        const normalizedRow = { ...row };
+        
+        nameColumns.forEach(col => {
+          if (normalizedRow[col]) {
+            normalizedRow[col] = normalizeProperCase(normalizedRow[col]);
+          }
+        });
+        
+        return normalizedRow;
+      });
+    }
+
+    // Storage functions
+    function saveToStorage() {
+      try {
+        const data = {
+          version: APP_VERSION,
+          timestamp: Date.now(),
+          state: AppState.currentState,
+          mode: AppState.currentMode,
+          profiles: AppState.profiles,
+          data: {
+            members: {
+              selectedColumns: AppState.data.members.selectedColumns,
+              filter: {
+                column: AppState.data.members.filter.column,
+                values: Array.from(AppState.data.members.filter.values)
+              },
+              sort: AppState.data.members.sort,
+              previewNormalization: AppState.data.members.previewNormalization
+            },
+            exec: {
+              selectedColumns: AppState.data.exec.selectedColumns,
+              filter: {
+                column: AppState.data.exec.filter.column,
+                values: Array.from(AppState.data.exec.filter.values)
+              },
+              sort: AppState.data.exec.sort,
+              previewNormalization: AppState.data.exec.previewNormalization
+            }
+          }
+        };
+        localStorage.setItem('maaa_app_state', JSON.stringify(data));
+        console.log('State saved to storage');
+      } catch (error) {
+        console.warn('Failed to save to storage:', error);
+      }
+    }
+
+    function loadFromStorage() {
+      try {
+        const stored = localStorage.getItem('maaa_app_state');
+        if (!stored) return;
+
+        const data = JSON.parse(stored);
+        
+        // Restore state
+        if (data.state) {
+          AppState.currentState = data.state;
+          document.getElementById('stateSelect').value = data.state;
+          updatePageTitles();
+        }
+        
+        if (data.mode) {
+          AppState.currentMode = data.mode;
+          switchMode(data.mode, false);
+        }
+        
+        // Restore profiles
+        if (data.profiles) {
+          AppState.profiles = data.profiles;
+          updateProfileDropdowns();
+        }
+        
+        // Restore data settings
+        if (data.data) {
+          if (data.data.members) {
+            AppState.data.members.selectedColumns = data.data.members.selectedColumns || [];
+            AppState.data.members.filter = {
+              column: data.data.members.filter?.column || null,
+              values: new Set(data.data.members.filter?.values || [])
+            };
+            AppState.data.members.sort = data.data.members.sort || { column: null, direction: null };
+            AppState.data.members.previewNormalization = data.data.members.previewNormalization || false;
+          }
+          
+          if (data.data.exec) {
+            AppState.data.exec.selectedColumns = data.data.exec.selectedColumns || [];
+            AppState.data.exec.filter = {
+              column: data.data.exec.filter?.column || null,
+              values: new Set(data.data.exec.filter?.values || [])
+            };
+            AppState.data.exec.sort = data.data.exec.sort || { column: null, direction: null };
+            AppState.data.exec.previewNormalization = data.data.exec.previewNormalization || false;
+          }
+        }
+        console.log('State loaded from storage');
+      } catch (error) {
+        console.warn('Failed to load from storage:', error);
+      }
+    }
+
+    // Mode switching
+    function switchMode(mode, saveState = true) {
+      AppState.currentMode = mode;
+      
+      // Update UI
+      document.body.className = `theme-${mode}`;
+      
+      // Update tabs
+      document.querySelectorAll('.mode-tab').forEach(tab => {
+        tab.classList.toggle('active', tab.dataset.mode === mode);
+      });
+      
+      // Show/hide views
+      document.getElementById('membersView').style.display = mode === 'members' ? 'block' : 'none';
+      document.getElementById('execView').style.display = mode === 'exec' ? 'block' : 'none';
+      
+      if (saveState) {
+        saveToStorage();
+      }
+    }
+
+    // State management
+    function updateState(newState) {
+      AppState.currentState = newState;
+      updatePageTitles();
+      saveToStorage();
+    }
+
+    function updatePageTitles() {
+      document.getElementById('membersTitle').textContent = `${AppState.currentState} Membership Data Management`;
+      document.getElementById('execTitle').textContent = `${AppState.currentState} Club Executives Data Management`;
+    }
+
+    // CSV Processing
+    function processCSV(file, mode) {
+      return new Promise((resolve, reject) => {
+        if (!file) {
+          reject(new Error('No file provided'));
+          return;
+        }
+
+        if (file.size > 50 * 1024 * 1024) {
+          reject(new Error('File too large (max 50MB)'));
+          return;
+        }
+
+        Papa.parse(file, {
+          header: true,
+          skipEmptyLines: true,
+          complete: function(results) {
+            if (results.errors.length > 0) {
+              const criticalErrors = results.errors.filter(e => e.type === 'Delimiter' || e.type === 'FieldMismatch');
+              if (criticalErrors.length > 0) {
+                reject(new Error(`CSV parsing error: ${criticalErrors[0].message}`));
+                return;
+              }
+            }
+
+            if (!results.data || results.data.length === 0) {
+              reject(new Error('No data found in CSV file'));
+              return;
+            }
+
+            try {
+              const processed = mode === 'exec' ? processExecData(results.data) : results.data;
+              resolve({
+                raw: results.data,
+                processed: processed,
+                headers: Object.keys(processed[0] || {})
+              });
+            } catch (error) {
+              reject(error);
+            }
+          },
+          error: function(error) {
+            reject(new Error(`Failed to parse CSV: ${error.message}`));
+          }
+        });
+      });
+    }
+
+    function processExecData(rawData) {
+      const processed = [];
+      
+      rawData.forEach(row => {
+        const roles = ['Pres', 'Sec', 'Reg'];
+        const roleNames = { 'Pres': 'President', 'Sec': 'Secretary', 'Reg': 'Registrar' };
+        
+        roles.forEach(rolePrefix => {
+          const execRow = {
+            ClubID: row.ClubID || '',
+            ClubName: row.FullName || '',
+            NickName: row.NickName || '',
+            ClubType: row.ClubType || '',
+            Role: roleNames[rolePrefix],
+            Surname: row[`${rolePrefix}Surname`] || '',
+            GivenNames: row[`${rolePrefix}GivenNames`] || '',
+            Phone: row[`${rolePrefix}Phone`] || '',
+            Mobile: row[`${rolePrefix}Mobile`] || '',
+            Email: row[`${rolePrefix}Email`] || '',
+            Address1: row[`${rolePrefix}Address1`] || '',
+            Address2: row[`${rolePrefix}Address2`] || '',
+            Suburb: row[`${rolePrefix}Suburb`] || '',
+            State: row[`${rolePrefix}State`] || '',
+            PostCode: row[`${rolePrefix}PostCode`] || '',
+            ElectedDate: row[`${rolePrefix}ElectedDate`] || ''
+          };
+          
+          // Add other club-level fields
+          Object.keys(row).forEach(key => {
+            if (!key.startsWith('Pres') && !key.startsWith('Sec') && !key.startsWith('Reg') && 
+                !['ClubID', 'FullName', 'NickName', 'ClubType'].includes(key)) {
+              execRow[key] = row[key];
+            }
+          });
+          
+          processed.push(execRow);
+        });
+      });
+      
+      return processed;
+    }
+
+    // Data filtering and processing
+    function getFilteredData(mode) {
+      const data = AppState.data[mode];
+      let filtered = [...data.processed];
+      
+      // Apply column filter
+      if (data.filter.column && data.filter.values.size > 0) {
+        filtered = filtered.filter(row => {
+          const value = String(row[data.filter.column] || '').trim();
+          return data.filter.values.has(value);
+        });
+      }
+      
+      // Apply sorting
+      if (data.sort.column) {
+        filtered.sort((a, b) => {
+          const aVal = String(a[data.sort.column] || '');
+          const bVal = String(b[data.sort.column] || '');
+          
+          // Try numeric comparison first
+          const aNum = parseFloat(aVal);
+          const bNum = parseFloat(bVal);
+          
+          let comparison;
+          if (!isNaN(aNum) && !isNaN(bNum)) {
+            comparison = aNum - bNum;
+          } else {
+            comparison = aVal.localeCompare(bVal, undefined, { numeric: true, sensitivity: 'base' });
+          }
+          
+          return data.sort.direction === 'desc' ? -comparison : comparison;
+        });
+      }
+      
+      return filtered;
+    }
+
+    function getSelectedData(mode) {
+      const filtered = getFilteredData(mode);
+      const selectedColumns = AppState.data[mode].selectedColumns;
+      
+      if (selectedColumns.length === 0) return filtered;
+      
+      return filtered.map(row => {
+        const selectedRow = {};
+        selectedColumns.forEach(col => {
+          selectedRow[col] = row[col];
+        });
+        return selectedRow;
+      });
+    }
+
+    function getDisplayData(mode) {
+      let data = getSelectedData(mode);
+      
+      // Apply normalization preview if enabled
+      if (AppState.data[mode].previewNormalization) {
+        data = applyNormalization(data, mode, true);
+      }
+      
+      return data;
+    }
+
+    // Data analysis
+    function analyzeData(mode) {
+      const data = getFilteredData(mode);
+      const analysis = {
+        totalRows: data.length,
+        duplicateEmails: [],
+        invalidEmails: [],
+        missingEmails: [],
+        emptyRoles: [],
+        duplicateDetails: [],
+        invalidDetails: [],
+        missingDetails: []
+      };
+      
+      // Find email column
+      const emailColumn = AppState.data[mode].headers.find(h => 
+        h.toLowerCase().includes('email') || h === 'Email1'
+      );
+      
+      if (emailColumn) {
+        const emailCounts = {};
+        
+        data.forEach((row, index) => {
+          const email = String(row[emailColumn] || '').trim().toLowerCase();
+          
+          if (!email) {
+            analysis.missingEmails.push({ index, row });
+            analysis.missingDetails.push({
+              name: `${row.GivenNames || row.FirstName || ''} ${row.Surname || row.LastName || ''}`.trim() || 'Unknown',
+              id: row.ClubID || row.MemberID || `Row ${index + 1}`
+            });
+          } else if (!isValidEmail(email)) {
+            analysis.invalidEmails.push({ index, row, email });
+            analysis.invalidDetails.push({
+              name: `${row.GivenNames || row.FirstName || ''} ${row.Surname || row.LastName || ''}`.trim() || 'Unknown',
+              email: email,
+              id: row.ClubID || row.MemberID || `Row ${index + 1}`
+            });
+          } else {
+            if (!emailCounts[email]) emailCounts[email] = [];
+            emailCounts[email].push({ index, row });
+          }
+        });
+        
+        // Find duplicates
+        Object.entries(emailCounts).forEach(([email, entries]) => {
+          if (entries.length > 1) {
+            analysis.duplicateEmails.push({ email, entries });
+            analysis.duplicateDetails.push({
+              email: email,
+              count: entries.length,
+              names: entries.map(entry => 
+                `${entry.row.GivenNames || entry.row.FirstName || ''} ${entry.row.Surname || entry.row.LastName || ''}`.trim() || 'Unknown'
+              )
+            });
+          }
+        });
+      }
+      
+      // Check for empty roles (exec mode only)
+      if (mode === 'exec') {
+        data.forEach((row, index) => {
+          if (!row.Surname && !row.GivenNames && !row.Email && !row.Phone && !row.Mobile) {
+            analysis.emptyRoles.push({ index, row });
+          }
+        });
+      }
+      
+      return analysis;
+    }
+
+    // UI Updates
+    function updateColumnGrid(mode) {
+      const grid = document.getElementById(`${mode}ColumnGrid`);
+      const headers = AppState.data[mode].headers;
+      const selected = AppState.data[mode].selectedColumns;
+      
+      grid.innerHTML = '';
+      
+      headers.forEach(header => {
+        const item = document.createElement('div');
+        item.className = 'column-item';
+        
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.id = `${mode}_col_${header}`;
+        checkbox.checked = selected.includes(header);
+        checkbox.addEventListener('change', (e) => {
+          if (e.target.checked) {
+            if (!AppState.data[mode].selectedColumns.includes(header)) {
+              AppState.data[mode].selectedColumns.push(header);
+            }
+          } else {
+            const index = AppState.data[mode].selectedColumns.indexOf(header);
+            if (index > -1) {
+              AppState.data[mode].selectedColumns.splice(index, 1);
+            }
+          }
+          updateDataTable(mode);
+          saveToStorage();
+        });
+        
+        const label = document.createElement('label');
+        label.textContent = header;
+        label.htmlFor = checkbox.id;
+        
+        item.appendChild(checkbox);
+        item.appendChild(label);
+        grid.appendChild(item);
+      });
+    }
+
+    function updateFilterSection(mode) {
+      const columnSelect = document.getElementById(`${mode}FilterColumn`);
+      const valuesContainer = document.getElementById(`${mode}FilterValues`);
+      
+      // Update column options
+      columnSelect.innerHTML = '<option value="">-- Select Column --</option>';
+      AppState.data[mode].headers.forEach(header => {
+        const option = document.createElement('option');
+        option.value = header;
+        option.textContent = header;
+        option.selected = header === AppState.data[mode].filter.column;
+        columnSelect.appendChild(option);
+      });
+      
+      // Update filter values if column is selected
+      if (AppState.data[mode].filter.column) {
+        updateFilterValues(mode, AppState.data[mode].filter.column);
+      } else {
+        valuesContainer.innerHTML = '<div class="text-muted text-center">Select a column to see filter options</div>';
+      }
+    }
+
+    function updateFilterValues(mode, column) {
+      const valuesContainer = document.getElementById(`${mode}FilterValues`);
+      const data = AppState.data[mode].processed;
+      
+      // Count unique values
+      const valueCounts = {};
+      data.forEach(row => {
+        const value = String(row[column] || '').trim();
+        valueCounts[value] = (valueCounts[value] || 0) + 1;
+      });
+      
+      // Sort by value name
+      const sortedValues = Object.entries(valueCounts).sort(([a], [b]) => a.localeCompare(b));
+      
+      valuesContainer.innerHTML = '';
+      
+      sortedValues.forEach(([value, count]) => {
+        const item = document.createElement('div');
+        item.className = 'filter-value-item';
+        
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.value = value;
+        checkbox.checked = AppState.data[mode].filter.values.has(value);
+        checkbox.addEventListener('change', (e) => {
+          if (e.target.checked) {
+            AppState.data[mode].filter.values.add(value);
+          } else {
+            AppState.data[mode].filter.values.delete(value);
+          }
+        });
+        
+        const label = document.createElement('label');
+        label.textContent = `${value || '(empty)'} (${count})`;
+        
+        item.appendChild(checkbox);
+        item.appendChild(label);
+        valuesContainer.appendChild(item);
+      });
+    }
+
+    function updateMailchimpSection(mode) {
+      const headers = AppState.data[mode].headers;
+      const selects = [
+        { id: `${mode}MailchimpEmail`, defaultMatch: ['Email1', 'Email', 'email'] },
+        { id: `${mode}MailchimpFirstName`, defaultMatch: ['GivenNames', 'FirstName', 'GivenName'] },
+        { id: `${mode}MailchimpLastName`, defaultMatch: ['SurName', 'Surname', 'LastName'] },
+        { id: `${mode}MailchimpPhone`, defaultMatch: ['Mobile', 'Phone', 'phone'] }
+      ];
+      
+      selects.forEach(({ id, defaultMatch }) => {
+        const select = document.getElementById(id);
+        if (!select) return;
+        
+        select.innerHTML = '<option value="">-- Select Column --</option>';
+        
+        headers.forEach(header => {
+          const option = document.createElement('option');
+          option.value = header;
+          option.textContent = header;
+          select.appendChild(option);
+        });
+        
+        // Set default if found
+        const defaultHeader = headers.find(h => defaultMatch.includes(h));
+        if (defaultHeader) {
+          select.value = defaultHeader;
+        }
+      });
+    }
+
+    function updateDataTable(mode) {
+      const data = getDisplayData(mode);
+      const headers = AppState.data[mode].selectedColumns;
+      
+      if (headers.length === 0 || data.length === 0) {
+        document.getElementById(`${mode}TableContainer`).style.display = 'none';
+        document.getElementById(`${mode}SummarySection`).style.display = 'none';
+        return;
+      }
+      
+      // Update preview checkbox state
+      const previewCheckbox = document.getElementById(`${mode}PreviewNormalization`);
+      if (previewCheckbox) {
+        previewCheckbox.checked = AppState.data[mode].previewNormalization;
+      }
+      
+      // Update table
+      const tableHead = document.getElementById(`${mode}TableHead`);
+      const tableBody = document.getElementById(`${mode}TableBody`);
+      
+      // Create header
+      const headerRow = document.createElement('tr');
+      headers.forEach(header => {
+        const th = document.createElement('th');
+        th.textContent = header;
+        th.dataset.column = header;
+        th.addEventListener('click', () => handleSort(mode, header));
+        
+        // Add sort indicator
+        if (AppState.data[mode].sort.column === header) {
+          th.classList.add(AppState.data[mode].sort.direction === 'asc' ? 'sorted-asc' : 'sorted-desc');
+        }
+        
+        headerRow.appendChild(th);
+      });
+      
+      tableHead.innerHTML = '';
+      tableHead.appendChild(headerRow);
+      
+      // Create body
+      tableBody.innerHTML = '';
+      const analysis = analyzeData(mode);
+      
+      data.forEach((row, index) => {
+        const tr = document.createElement('tr');
+        
+        // Add row classes for issues
+        const emailColumn = AppState.data[mode].headers.find(h => 
+          h.toLowerCase().includes('email') || h === 'Email1'
+        );
+        
+        if (emailColumn) {
+          const email = String(row[emailColumn] || '').trim().toLowerCase();
+          const isDuplicate = analysis.duplicateEmails.some(dup => dup.email === email);
+          const isInvalid = !email || !isValidEmail(email);
+          
+          if (isDuplicate) tr.classList.add('duplicate-email');
+          if (isInvalid) tr.classList.add('invalid-email');
+        }
+        
+        if (mode === 'exec') {
+          const isEmpty = !row.Surname && !row.GivenNames && !row.Email && !row.Phone && !row.Mobile;
+          if (isEmpty) tr.classList.add('missing-role');
+        }
+        
+        headers.forEach(header => {
+          const td = document.createElement('td');
+          td.textContent = row[header] || '';
+          tr.appendChild(td);
+        });
+        
+        tableBody.appendChild(tr);
+      });
+      
+      document.getElementById(`${mode}TableContainer`).style.display = 'block';
+      
+      // Update summary
+      updateSummarySection(mode, analysis);
+    }
+
+    function updateSummarySection(mode, analysis) {
+      const grid = document.getElementById(`${mode}SummaryGrid`);
+      const detailedGrid = document.getElementById(`${mode}DetailedSummary`);
+      const data = getFilteredData(mode);
+      
+      const cards = [
+        {
+          number: analysis.totalRows,
+          label: mode === 'members' ? 'Total Members' : 'Total Executives',
+          type: 'success',
+          clickable: false
+        },
+        {
+          number: analysis.duplicateEmails.length,
+          label: 'Duplicate Emails',
+          type: analysis.duplicateEmails.length === 0 ? 'success' : 'error',
+          clickable: analysis.duplicateEmails.length > 0,
+          detailType: 'duplicate'
+        },
+        {
+          number: analysis.invalidEmails.length + analysis.missingEmails.length,
+          label: 'Invalid/Missing Emails',
+          type: (analysis.invalidEmails.length + analysis.missingEmails.length) === 0 ? 'success' : 'warning',
+          clickable: (analysis.invalidEmails.length + analysis.missingEmails.length) > 0,
+          detailType: 'invalid'
+        }
+      ];
+      
+      if (mode === 'exec') {
+        cards.push({
+          number: analysis.emptyRoles.length,
+          label: 'Empty Roles',
+          type: analysis.emptyRoles.length === 0 ? 'success' : 'warning',
+          clickable: analysis.emptyRoles.length > 0,
+          detailType: 'empty'
+        });
+      }
+      
+      grid.innerHTML = '';
+      cards.forEach((card, index) => {
+        const cardEl = document.createElement('div');
+        cardEl.className = `summary-card ${card.type}`;
+        if (card.clickable) {
+          cardEl.style.cursor = 'pointer';
+          cardEl.title = 'Click to view details';
+          cardEl.addEventListener('click', () => showDetailModal(mode, card.detailType, analysis));
+        }
+        cardEl.innerHTML = `
+          <div class="summary-number">${card.number}</div>
+          <div class="summary-label">${card.label}</div>
+        `;
+        grid.appendChild(cardEl);
+      });
+      
+      // Create detailed summary
+      detailedGrid.innerHTML = '';
+      
+      // Duplicate emails detail
+      if (analysis.duplicateDetails.length > 0) {
+        const duplicateCard = createDetailCard('Duplicate Email Addresses', 'error', analysis.duplicateDetails.map(dup => ({
+          primary: dup.email,
+          secondary: `${dup.count} entries: ${dup.names.join(', ')}`,
+          csv: `${dup.email},${dup.count},"${dup.names.join(', ')}"`
+        })));
+        detailedGrid.appendChild(duplicateCard);
+      }
+      
+      // Invalid emails detail
+      if (analysis.invalidDetails.length > 0) {
+        const invalidCard = createDetailCard('Invalid Email Addresses', 'warning', analysis.invalidDetails.map(inv => ({
+          primary: inv.name,
+          secondary: `ID: ${inv.id}, Email: ${inv.email}`,
+          csv: `"${inv.name}",${inv.id},"${inv.email}"`
+        })));
+        detailedGrid.appendChild(invalidCard);
+      }
+      
+      // Missing emails detail
+      if (analysis.missingDetails.length > 0) {
+        const missingCard = createDetailCard('Missing Email Addresses', 'warning', analysis.missingDetails.map(miss => ({
+          primary: miss.name,
+          secondary: `ID: ${miss.id}`,
+          csv: `"${miss.name}",${miss.id}`
+        })));
+        detailedGrid.appendChild(missingCard);
+      }
+      
+      // Empty roles detail (exec mode only)
+      if (mode === 'exec' && analysis.emptyRoles.length > 0) {
+        const emptyCard = createDetailCard('Empty Role Entries', 'warning', analysis.emptyRoles.map((empty, idx) => ({
+          primary: empty.row.ClubName || 'Unknown Club',
+          secondary: `Role: ${empty.row.Role || 'Unknown'}, Club ID: ${empty.row.ClubID || 'N/A'}`,
+          csv: `"${empty.row.ClubName || 'Unknown Club'}","${empty.row.Role || 'Unknown'}",${empty.row.ClubID || 'N/A'}`
+        })));
+        detailedGrid.appendChild(emptyCard);
+      }
+      
+      document.getElementById(`${mode}SummarySection`).style.display = 'block';
+    }
+
+    function createDetailCard(title, type, items) {
+      const card = document.createElement('div');
+      card.className = `summary-detail-card ${type}`;
+      
+      const csvData = `${title}\n${items.map(item => item.csv).join('\n')}`;
+      
+      card.innerHTML = `
+        <div class="detail-header">
+          ${title}
+          <button class="btn copy-csv-btn" style="float: right; padding: 0.25rem 0.5rem; font-size: 0.75rem;">Copy CSV</button>
+        </div>
+        <div class="detail-content">
+          ${items.map(item => `
+            <div class="detail-item">
+              <strong>${item.primary}</strong><br>
+              <small>${item.secondary}</small>
+            </div>
+          `).join('')}
+        </div>
+      `;
+      
+      // Add event listener to the copy button
+      const copyBtn = card.querySelector('.copy-csv-btn');
+      copyBtn.addEventListener('click', () => {
+        copyToClipboard(csvData);
+      });
+      
+      return card;
+    }
+
+    function showDetailModal(mode, detailType, analysis) {
+      let title, items;
+      
+      switch (detailType) {
+        case 'duplicate':
+          title = 'Duplicate Email Addresses';
+          items = analysis.duplicateDetails.map(dup => ({
+            primary: dup.email,
+            secondary: `${dup.count} entries: ${dup.names.join(', ')}`,
+            csv: `${dup.email},${dup.count},"${dup.names.join(', ')}"`
+          }));
+          break;
+        case 'invalid':
+          title = 'Invalid/Missing Email Addresses';
+          items = [...analysis.invalidDetails, ...analysis.missingDetails].map(item => ({
+            primary: item.name,
+            secondary: item.email ? `ID: ${item.id}, Email: ${item.email}` : `ID: ${item.id} (Missing email)`,
+            csv: `"${item.name}",${item.id},"${item.email || 'MISSING'}"`
+          }));
+          break;
+        case 'empty':
+          title = 'Empty Role Entries';
+          items = analysis.emptyRoles.map(empty => ({
+            primary: empty.row.ClubName || 'Unknown Club',
+            secondary: `Role: ${empty.row.Role || 'Unknown'}, Club ID: ${empty.row.ClubID || 'N/A'}`,
+            csv: `"${empty.row.ClubName || 'Unknown Club'}","${empty.row.Role || 'Unknown'}",${empty.row.ClubID || 'N/A'}`
+          }));
+          break;
+      }
+      
+      const csvData = `${title}\n${items.map(item => item.csv).join('\n')}`;
+      
+      const modal = document.createElement('div');
+      modal.className = 'modal-overlay';
+      modal.style.zIndex = '10000';
+      
+      modal.innerHTML = `
+        <div class="modal">
+          <div class="modal-header">${title} (${items.length} items)</div>
+          <div style="max-height: 400px; overflow-y: auto; margin: 1rem 0;">
+            ${items.map(item => `
+              <div style="padding: 0.5rem; border-bottom: 1px solid var(--border);">
+                <strong>${item.primary}</strong><br>
+                <small style="color: var(--text-muted);">${item.secondary}</small>
+              </div>
+            `).join('')}
+          </div>
+          <div class="modal-actions">
+            <button class="btn copy-all-csv">Copy All as CSV</button>
+            <button class="btn btn-primary close-modal">Close</button>
+          </div>
+        </div>
+      `;
+      
+      document.body.appendChild(modal);
+      
+      // Add event listeners
+      const copyAllBtn = modal.querySelector('.copy-all-csv');
+      const closeBtn = modal.querySelector('.close-modal');
+      
+      copyAllBtn.addEventListener('click', () => {
+        copyToClipboard(csvData);
+      });
+      
+      closeBtn.addEventListener('click', () => {
+        modal.remove();
+      });
+      
+      // Close on click outside
+      modal.addEventListener('click', (e) => {
+        if (e.target === modal) modal.remove();
+      });
+    }
+
+    function copyToClipboard(text) {
+      if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(text).then(() => {
+          showMessage('Data copied to clipboard', 'success');
+        }).catch(() => {
+          fallbackCopyTextToClipboard(text);
+        });
+      } else {
+        fallbackCopyTextToClipboard(text);
+      }
+    }
+
+    function fallbackCopyTextToClipboard(text) {
+      const textArea = document.createElement('textarea');
+      textArea.value = text;
+      textArea.style.position = 'fixed';
+      textArea.style.left = '-999999px';
+      textArea.style.top = '-999999px';
+      document.body.appendChild(textArea);
+      textArea.focus();
+      textArea.select();
+      
+      try {
+        document.execCommand('copy');
+        showMessage('Data copied to clipboard', 'success');
+      } catch (err) {
+        showMessage('Failed to copy to clipboard', 'error');
+      }
+      
+      document.body.removeChild(textArea);
+    }
+
+    function handleSort(mode, column) {
+      const currentSort = AppState.data[mode].sort;
+      
+      if (currentSort.column === column) {
+        // Toggle direction
+        currentSort.direction = currentSort.direction === 'asc' ? 'desc' : 'asc';
+      } else {
+        // New column
+        currentSort.column = column;
+        currentSort.direction = 'asc';
+      }
+      
+      updateDataTable(mode);
+      saveToStorage();
+    }
+
+    function showDataSections(mode) {
+      document.getElementById(`${mode}ProfileSection`).style.display = 'block';
+      document.getElementById(`${mode}ColumnSection`).style.display = 'block';
+      document.getElementById(`${mode}FilterSection`).style.display = 'block';
+      document.getElementById(`${mode}MailchimpSection`).style.display = 'block';
+      document.getElementById(`${mode}ExportSection`).style.display = 'block';
+    }
+
+    // Profile Management
+    function saveProfile(mode, name = null) {
+      console.log('saveProfile called with mode:', mode, 'name:', name);
+      
+      if (!name) {
+        const select = document.getElementById(`${mode}ProfileSelect`);
+        name = select?.value;
+        
+        if (!name) {
+          // Use custom prompt instead of browser prompt
+          customPrompt('Enter profile name:', function(promptName) {
+            if (promptName && promptName.trim()) {
+              saveProfile(mode, promptName.trim());
+            }
+          });
+          return;
+        }
+      }
+      
+      if (!name || !name.trim()) {
+        showMessage('Profile name is required', 'warning');
+        return;
+      }
+      
+      name = name.trim();
+      
+      // Capture current state including selected columns from UI
+      const currentSelectedColumns = [];
+      document.querySelectorAll(`#${mode}ColumnGrid input[type="checkbox"]:checked`).forEach(checkbox => {
+        const columnName = checkbox.id.replace(`${mode}_col_`, '');
+        currentSelectedColumns.push(columnName);
+      });
+      
+      // Capture current filter values from UI
+      const currentFilterValues = [];
+      if (AppState.data[mode].filter.column) {
+        document.querySelectorAll(`#${mode}FilterValues input[type="checkbox"]:checked`).forEach(checkbox => {
+          currentFilterValues.push(checkbox.value);
+        });
+      }
+      
+      const profile = {
+        version: APP_VERSION,
+        timestamp: Date.now(),
+        state: AppState.currentState,
+        selectedColumns: currentSelectedColumns,
+        filter: {
+          column: AppState.data[mode].filter.column,
+          values: currentFilterValues
+        },
+        sort: { ...AppState.data[mode].sort },
+        // Also save Mailchimp mappings and case normalization settings
+        mailchimp: {
+          email: document.getElementById(`${mode}MailchimpEmail`)?.value || '',
+          firstName: document.getElementById(`${mode}MailchimpFirstName`)?.value || '',
+          lastName: document.getElementById(`${mode}MailchimpLastName`)?.value || '',
+          phone: document.getElementById(`${mode}MailchimpPhone`)?.value || ''
+        },
+        normalizeCase: document.getElementById(`${mode}NormalizeCase`)?.checked || false,
+        previewNormalization: document.getElementById(`${mode}PreviewNormalization`)?.checked || false
+      };
+      
+      // Ensure profiles object exists
+      if (!AppState.profiles[mode]) {
+        AppState.profiles[mode] = {};
+      }
+      
+      AppState.profiles[mode][name] = profile;
+      
+      // Update the selected columns in app state
+      AppState.data[mode].selectedColumns = [...currentSelectedColumns];
+      AppState.data[mode].filter.values = new Set(currentFilterValues);
+      
+      updateProfileDropdowns();
+      
+      // Select the saved profile
+      document.getElementById(`${mode}ProfileSelect`).value = name;
+      updateProfileButtons(mode);
+      
+      saveToStorage();
+      showMessage(`Profile "${name}" saved successfully with ${currentSelectedColumns.length} columns and ${currentFilterValues.length} filter values`, 'success');
+      
+      console.log(`Saved profile "${name}":`, profile);
+    }
+
+    function saveAsProfile(mode) {
+      console.log('saveAsProfile called for mode:', mode);
+      
+      customPrompt('Enter new profile name:', function(name) {
+        console.log('User entered:', name);
+        if (name && name.trim()) {
+          saveProfile(mode, name.trim());
+        } else if (name === '') {
+          showMessage('Profile name cannot be empty', 'warning');
+        }
+      });
+    }
+
+    function deleteProfile(mode) {
+      const select = document.getElementById(`${mode}ProfileSelect`);
+      const name = select?.value;
+      
+      if (!name) {
+        showMessage('Please select a profile to delete', 'warning');
+        return;
+      }
+      
+      // Use custom confirmation dialog
+      customConfirm(`Delete profile "${name}"?`, 'This action cannot be undone.', function(confirmed) {
+        if (confirmed) {
+          // Remove from AppState
+          delete AppState.profiles[mode][name];
+          
+          // Update the dropdown immediately
+          updateProfileDropdowns();
+          
+          // Clear the selection since the profile no longer exists
+          select.value = '';
+          updateProfileButtons(mode);
+          
+          // Save to storage
+          saveToStorage();
+          
+          showMessage(`Profile "${name}" has been deleted successfully`, 'success');
+          console.log(`Profile "${name}" deleted from ${mode} mode`);
+        } else {
+          showMessage('Profile deletion cancelled', 'info');
+        }
+      });
+    }
+
+    function applyProfile(mode) {
+      const select = document.getElementById(`${mode}ProfileSelect`);
+      const name = select?.value;
+      
+      if (!name || !AppState.profiles[mode][name]) {
+        showMessage('Please select a valid profile to apply', 'warning');
+        return;
+      }
+      
+      const profile = AppState.profiles[mode][name];
+      console.log(`Applying profile "${name}":`, profile);
+      
+      // Apply state
+      if (profile.state && profile.state !== AppState.currentState) {
+        AppState.currentState = profile.state;
+        document.getElementById('stateSelect').value = profile.state;
+        updatePageTitles();
+      }
+      
+      // Apply column selections
+      AppState.data[mode].selectedColumns = [...(profile.selectedColumns || [])];
+      
+      // Update column checkboxes in UI
+      document.querySelectorAll(`#${mode}ColumnGrid input[type="checkbox"]`).forEach(checkbox => {
+        const columnName = checkbox.id.replace(`${mode}_col_`, '');
+        checkbox.checked = profile.selectedColumns.includes(columnName);
+      });
+      
+      // Apply filter settings
+      AppState.data[mode].filter = {
+        column: profile.filter?.column || null,
+        values: new Set(profile.filter?.values || [])
+      };
+      
+      // Update filter UI
+      if (profile.filter?.column) {
+        document.getElementById(`${mode}FilterColumn`).value = profile.filter.column;
+        updateFilterValues(mode, profile.filter.column);
+        
+        // Wait for filter values to be populated, then check the right ones
+        setTimeout(() => {
+          document.querySelectorAll(`#${mode}FilterValues input[type="checkbox"]`).forEach(checkbox => {
+            checkbox.checked = (profile.filter?.values || []).includes(checkbox.value);
+          });
+          
+          // Apply the filter to update the data display
+          const checkboxes = document.querySelectorAll(`#${mode}FilterValues input[type="checkbox"]:checked`);
+          AppState.data[mode].filter.values = new Set(Array.from(checkboxes).map(cb => cb.value));
+          updateDataTable(mode);
+        }, 100);
+      } else {
+        document.getElementById(`${mode}FilterColumn`).value = '';
+        document.getElementById(`${mode}FilterValues`).innerHTML = '<div class="text-muted text-center">Select a column to see filter options</div>';
+      }
+      
+      // Apply sort settings
+      AppState.data[mode].sort = { ...(profile.sort || { column: null, direction: null }) };
+      
+      // Apply Mailchimp mappings, case normalization, and preview settings
+      if (profile.mailchimp) {
+        if (document.getElementById(`${mode}MailchimpEmail`)) {
+          document.getElementById(`${mode}MailchimpEmail`).value = profile.mailchimp.email || '';
+        }
+        if (document.getElementById(`${mode}MailchimpFirstName`)) {
+          document.getElementById(`${mode}MailchimpFirstName`).value = profile.mailchimp.firstName || '';
+        }
+        if (document.getElementById(`${mode}MailchimpLastName`)) {
+          document.getElementById(`${mode}MailchimpLastName`).value = profile.mailchimp.lastName || '';
+        }
+        if (document.getElementById(`${mode}MailchimpPhone`)) {
+          document.getElementById(`${mode}MailchimpPhone`).value = profile.mailchimp.phone || '';
+        }
+      }
+      
+      // Apply case normalization setting
+      const normalizeCheckbox = document.getElementById(`${mode}NormalizeCase`);
+      if (normalizeCheckbox) {
+        normalizeCheckbox.checked = profile.normalizeCase || false;
+      }
+      
+      // Apply preview normalization setting
+      const previewCheckbox = document.getElementById(`${mode}PreviewNormalization`);
+      if (previewCheckbox) {
+        previewCheckbox.checked = profile.previewNormalization || false;
+        AppState.data[mode].previewNormalization = profile.previewNormalization || false;
+      }
+      
+      // Update data display
+      updateDataTable(mode);
+      
+      saveToStorage();
+      
+      const filterCount = profile.filter?.values?.length || 0;
+      const columnCount = profile.selectedColumns?.length || 0;
+      showMessage(`Profile "${name}" applied: ${columnCount} columns, ${filterCount} filter values`, 'success');
+    }
+
+    function updateProfileDropdowns() {
+      ['members', 'exec'].forEach(mode => {
+        const select = document.getElementById(`${mode}ProfileSelect`);
+        const currentValue = select?.value;
+        
+        if (!select) return;
+        
+        select.innerHTML = '<option value="">-- Select Profile --</option>';
+        
+        const profiles = AppState.profiles[mode] || {};
+        Object.keys(profiles).sort().forEach(name => {
+          const option = document.createElement('option');
+          option.value = name;
+          option.textContent = name;
+          select.appendChild(option);
+        });
+        
+        // Restore selection if it still exists
+        if (currentValue && profiles[currentValue]) {
+          select.value = currentValue;
+        }
+        
+        updateProfileButtons(mode);
+      });
+    }
+
+    function updateProfileButtons(mode) {
+      const select = document.getElementById(`${mode}ProfileSelect`);
+      const hasSelection = select && select.value;
+      
+      const deleteBtn = document.getElementById(`${mode}ProfileDelete`);
+      const applyBtn = document.getElementById(`${mode}ProfileApply`);
+      
+      if (deleteBtn) deleteBtn.disabled = !hasSelection;
+      if (applyBtn) applyBtn.disabled = !hasSelection;
+    }
+
+    // Custom prompt modal for better UX
+    function customPrompt(message, callback) {
+      // Remove any existing modal
+      const existingModal = document.getElementById('customPromptModal');
+      if (existingModal) {
+        existingModal.remove();
+      }
+
+      // Create modal
+      const modal = document.createElement('div');
+      modal.id = 'customPromptModal';
+      modal.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 10000;
+      `;
+
+      const dialog = document.createElement('div');
+      dialog.style.cssText = `
+        background: white;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        max-width: 400px;
+        width: 90%;
+      `;
+
+      dialog.innerHTML = `
+        <h3 style="margin: 0 0 15px 0; color: #333;">${message}</h3>
+        <input type="text" id="promptInput" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;">
+        <div style="margin-top: 15px; text-align: right;">
+          <button id="promptCancel" style="margin-right: 10px; padding: 8px 16px; border: 1px solid #ddd; background: #f5f5f5; border-radius: 4px; cursor: pointer;">Cancel</button>
+          <button id="promptOk" style="padding: 8px 16px; border: 1px solid #007bff; background: #007bff; color: white; border-radius: 4px; cursor: pointer;">OK</button>
+        </div>
+      `;
+
+      modal.appendChild(dialog);
+      document.body.appendChild(modal);
+
+      const input = document.getElementById('promptInput');
+      const okBtn = document.getElementById('promptOk');
+      const cancelBtn = document.getElementById('promptCancel');
+
+      input.focus();
+
+      function handleOk() {
+        const value = input.value.trim();
+        modal.remove();
+        callback(value);
+      }
+
+      function handleCancel() {
+        modal.remove();
+        callback(null);
+      }
+
+      okBtn.addEventListener('click', handleOk);
+      cancelBtn.addEventListener('click', handleCancel);
+      input.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') handleOk();
+        if (e.key === 'Escape') handleCancel();
+      });
+
+      // Click outside to cancel
+      modal.addEventListener('click', function(e) {
+        if (e.target === modal) handleCancel();
+      });
+    }
+
+    // Custom confirmation dialog
+    function customConfirm(title, message, callback) {
+      // Remove any existing modal
+      const existingModal = document.getElementById('customConfirmModal');
+      if (existingModal) {
+        existingModal.remove();
+      }
+
+      // Create modal
+      const modal = document.createElement('div');
+      modal.id = 'customConfirmModal';
+      modal.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 10000;
+      `;
+
+      const dialog = document.createElement('div');
+      dialog.style.cssText = `
+        background: white;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        max-width: 400px;
+        width: 90%;
+      `;
+
+      dialog.innerHTML = `
+        <h3 style="margin: 0 0 10px 0; color: #d32f2f;">${title}</h3>
+        <p style="margin: 0 0 20px 0; color: #666;">${message}</p>
+        <div style="text-align: right;">
+          <button id="confirmCancel" style="margin-right: 10px; padding: 8px 16px; border: 1px solid #ddd; background: #f5f5f5; border-radius: 4px; cursor: pointer;">Cancel</button>
+          <button id="confirmDelete" style="padding: 8px 16px; border: 1px solid #d32f2f; background: #d32f2f; color: white; border-radius: 4px; cursor: pointer;">Delete</button>
+        </div>
+      `;
+
+      modal.appendChild(dialog);
+      document.body.appendChild(modal);
+
+      const deleteBtn = document.getElementById('confirmDelete');
+      const cancelBtn = document.getElementById('confirmCancel');
+
+      deleteBtn.focus();
+
+      function handleDelete() {
+        modal.remove();
+        callback(true);
+      }
+
+      function handleCancel() {
+        modal.remove();
+        callback(false);
+      }
+
+      deleteBtn.addEventListener('click', handleDelete);
+      cancelBtn.addEventListener('click', handleCancel);
+
+      // ESC key to cancel
+      document.addEventListener('keydown', function escHandler(e) {
+        if (e.key === 'Escape') {
+          document.removeEventListener('keydown', escHandler);
+          handleCancel();
+        }
+      });
+
+      // Click outside to cancel
+      modal.addEventListener('click', function(e) {
+        if (e.target === modal) handleCancel();
+      });
+    }
+
+    // Export functions
+    function exportCSV(mode) {
+      const rawData = getSelectedData(mode);
+      const headers = AppState.data[mode].selectedColumns;
+      
+      if (headers.length === 0 || rawData.length === 0) {
+        showMessage('No data to export', 'warning');
+        return;
+      }
+      
+      // Check if case normalization is enabled
+      const normalizeCheckbox = document.getElementById(`${mode}NormalizeCase`);
+      const shouldNormalize = normalizeCheckbox && normalizeCheckbox.checked;
+      
+      // Apply normalization if enabled
+      const data = applyNormalization(rawData, mode, shouldNormalize);
+      
+      const rows = [
+        headers.map(csvEscape).join(','),
+        ...data.map(row => headers.map(h => csvEscape(row[h] || '')).join(','))
+      ];
+      
+      const csv = rows.join('\n');
+      const normalizeText = shouldNormalize ? '_Normalized' : '';
+      const filename = `MAAA_${AppState.currentState}_${mode === 'members' ? 'Member' : 'Executive'}_Database_Export${normalizeText}_${formatDate()}.csv`;
+      
+      downloadFile(csv, filename, 'text/csv');
+      
+      const normalizeMessage = shouldNormalize ? ' (with name normalization)' : '';
+      showMessage(`Exported ${data.length} rows to ${filename}${normalizeMessage}`, 'success');
+    }
+
+    function exportMailchimp(mode) {
+      const rawData = getFilteredData(mode); // Back to filtered data like before
+      
+      const emailCol = document.getElementById(`${mode}MailchimpEmail`).value;
+      if (!emailCol) {
+        showMessage('Please select an email column for Mailchimp export', 'error');
+        return;
+      }
+      
+      const firstNameCol = document.getElementById(`${mode}MailchimpFirstName`).value;
+      const lastNameCol = document.getElementById(`${mode}MailchimpLastName`).value;
+      const phoneCol = document.getElementById(`${mode}MailchimpPhone`).value;
+      
+      // Check if case normalization is enabled
+      const normalizeCheckbox = document.getElementById(`${mode}NormalizeCase`);
+      const shouldNormalize = normalizeCheckbox && normalizeCheckbox.checked;
+      
+      // Apply normalization if enabled
+      const data = applyNormalization(rawData, mode, shouldNormalize);
+      
+      // Get selected columns - if none selected, use all available columns
+      let selectedColumns = AppState.data[mode].selectedColumns;
+      if (selectedColumns.length === 0) {
+        selectedColumns = AppState.data[mode].headers;
+      }
+      
+      // Filter data to only include selected columns
+      const filteredData = data.map(row => {
+        const selectedRow = {};
+        selectedColumns.forEach(col => {
+          selectedRow[col] = row[col];
+        });
+        return selectedRow;
+      });
+      
+      // Create mapping of original columns to Mailchimp column names
+      const columnMapping = {};
+      if (emailCol && selectedColumns.includes(emailCol)) columnMapping[emailCol] = 'Email Address';
+      if (firstNameCol && selectedColumns.includes(firstNameCol)) columnMapping[firstNameCol] = 'First Name'; 
+      if (lastNameCol && selectedColumns.includes(lastNameCol)) columnMapping[lastNameCol] = 'Last Name';
+      if (phoneCol && selectedColumns.includes(phoneCol)) columnMapping[phoneCol] = 'Phone';
+      
+      // Create headers with Mailchimp names for mapped columns, original names for others
+      const headers = selectedColumns.map(col => columnMapping[col] || col);
+      
+      // Transform data to use Mailchimp column names while keeping all selected columns
+      const mailchimpData = filteredData.map(row => {
+        const transformedRow = {};
+        selectedColumns.forEach(col => {
+          const headerName = columnMapping[col] || col;
+          transformedRow[headerName] = row[col] || '';
+        });
+        return transformedRow;
+      });
+      
+      const rows = [
+        headers.map(csvEscape).join(','),
+        ...mailchimpData.map(row => headers.map(h => csvEscape(row[h])).join(','))
+      ];
+      
+      const csv = rows.join('\n');
+      const normalizeText = shouldNormalize ? '_Normalized' : '';
+      const filename = `MAAA_${AppState.currentState}_${mode === 'members' ? 'Member' : 'Executive'}_Mailchimp_Export${normalizeText}_${formatDate()}.csv`;
+      
+      downloadFile(csv, filename, 'text/csv');
+      
+      const normalizeMessage = shouldNormalize ? ' (with name normalization)' : '';
+      showMessage(`Exported ${mailchimpData.length} rows with ${headers.length} columns to Mailchimp format${normalizeMessage}`, 'success');
+    }
+
+    function exportWorkspace() {
+      const workspace = {
+        version: APP_VERSION,
+        timestamp: Date.now(),
+        application: 'MAAA Database Manager',
+        data: {
+          currentState: AppState.currentState,
+          currentMode: AppState.currentMode,
+          profiles: AppState.profiles
+        }
+      };
+      
+      const json = JSON.stringify(workspace, null, 2);
+      const filename = `MAAA_Workspace_${AppState.currentState}_${formatDate()}.json`;
+      
+      downloadFile(json, filename, 'application/json');
+      showMessage('Workspace exported successfully', 'success');
+    }
+
+    function importWorkspace() {
+      document.getElementById('workspaceImportInput').click();
+    }
+
+    function handleWorkspaceImport(file) {
+      const reader = new FileReader();
+      
+      reader.onload = function(e) {
+        try {
+          const workspace = JSON.parse(e.target.result);
+          
+          if (!workspace.data || !workspace.data.profiles) {
+            throw new Error('Invalid workspace file format');
+          }
+          
+          // Import profiles
+          AppState.profiles = workspace.data.profiles || { members: {}, exec: {} };
+          
+          // Import state if available
+          if (workspace.data.currentState) {
+            AppState.currentState = workspace.data.currentState;
+            document.getElementById('stateSelect').value = workspace.data.currentState;
+            updatePageTitles();
+          }
+          
+          // Import mode if available
+          if (workspace.data.currentMode) {
+            switchMode(workspace.data.currentMode, false);
+          }
+          
+          updateProfileDropdowns();
+          saveToStorage();
+          
+          const profileCount = Object.keys(AppState.profiles.members).length + 
+                              Object.keys(AppState.profiles.exec).length;
+          
+          showMessage(`Workspace imported successfully. Loaded ${profileCount} profiles.`, 'success');
+        } catch (error) {
+          showMessage(`Failed to import workspace: ${error.message}`, 'error');
+        }
+      };
+      
+      reader.readAsText(file);
+    }
+
+    function downloadFile(content, filename, mimeType) {
+      const blob = new Blob([content], { type: mimeType });
+      const url = URL.createObjectURL(blob);
+      
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      a.style.display = 'none';
+      
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      
+      URL.revokeObjectURL(url);
+    }
+
+    // Event Listeners
+    document.addEventListener('DOMContentLoaded', function() {
+      // Load saved state
+      loadFromStorage();
+      
+      // State selector
+      document.getElementById('stateSelect').addEventListener('change', (e) => {
+        updateState(e.target.value);
+      });
+      
+      // Mode tabs
+      document.querySelectorAll('.mode-tab').forEach(tab => {
+        tab.addEventListener('click', () => switchMode(tab.dataset.mode));
+      });
+      
+      // File inputs
+      document.getElementById('membersFileInput').addEventListener('change', async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        
+        try {
+          showMessage('Processing CSV file...', 'info');
+          const result = await processCSV(file, 'members');
+          
+          AppState.data.members = {
+            ...AppState.data.members,
+            ...result,
+            selectedColumns: result.headers.slice() // Select all columns by default
+          };
+          
+          updateColumnGrid('members');
+          updateFilterSection('members');
+          updateMailchimpSection('members');
+          updateDataTable('members');
+          showDataSections('members');
+          
+          showMessage(`Loaded ${result.processed.length} member records with ${result.headers.length} columns`, 'success');
+        } catch (error) {
+          showMessage(error.message, 'error');
+        }
+      });
+      
+      document.getElementById('execFileInput').addEventListener('change', async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        
+        try {
+          showMessage('Processing CSV file...', 'info');
+          const result = await processCSV(file, 'exec');
+          
+          AppState.data.exec = {
+            ...AppState.data.exec,
+            ...result,
+            selectedColumns: result.headers.slice() // Select all columns by default
+          };
+          
+          updateColumnGrid('exec');
+          updateFilterSection('exec');
+          updateMailchimpSection('exec');
+          updateDataTable('exec');
+          showDataSections('exec');
+          
+          showMessage(`Loaded ${result.raw.length} club records expanded to ${result.processed.length} executive records with ${result.headers.length} columns`, 'success');
+        } catch (error) {
+          showMessage(error.message, 'error');
+        }
+      });
+      
+      // Profile management event listeners for both modes
+      ['members', 'exec'].forEach(mode => {
+        // Profile dropdown change - auto-apply when selection changes
+        document.getElementById(`${mode}ProfileSelect`).addEventListener('change', function() {
+          updateProfileButtons(mode);
+          
+          // Auto-apply the selected profile
+          if (this.value) {
+            applyProfile(mode);
+          }
+        });
+        
+        // Profile save button
+        document.getElementById(`${mode}ProfileSave`).addEventListener('click', function() {
+          saveProfile(mode);
+        });
+        
+        // Profile save as button
+        document.getElementById(`${mode}ProfileSaveAs`).addEventListener('click', function() {
+          saveAsProfile(mode);
+        });
+        
+        // Profile delete button
+        document.getElementById(`${mode}ProfileDelete`).addEventListener('click', function() {
+          deleteProfile(mode);
+        });
+        
+        // Profile apply button
+        document.getElementById(`${mode}ProfileApply`).addEventListener('click', function() {
+          applyProfile(mode);
+        });
+        
+        // Preview normalization controls
+        document.getElementById(`${mode}PreviewNormalization`).addEventListener('change', function() {
+          AppState.data[mode].previewNormalization = this.checked;
+          saveToStorage();
+        });
+        
+        document.getElementById(`${mode}ApplyPreview`).addEventListener('click', function() {
+          updateDataTable(mode);
+        });
+        
+        // Column selection buttons
+        document.getElementById(`${mode}SelectAll`).addEventListener('click', () => {
+          AppState.data[mode].selectedColumns = [...AppState.data[mode].headers];
+          updateColumnGrid(mode);
+          updateDataTable(mode);
+          saveToStorage();
+        });
+        
+        document.getElementById(`${mode}SelectNone`).addEventListener('click', () => {
+          AppState.data[mode].selectedColumns = [];
+          updateColumnGrid(mode);
+          updateDataTable(mode);
+          saveToStorage();
+        });
+        
+        // Filter controls
+        document.getElementById(`${mode}FilterColumn`).addEventListener('change', (e) => {
+          AppState.data[mode].filter.column = e.target.value;
+          AppState.data[mode].filter.values.clear();
+          if (e.target.value) {
+            updateFilterValues(mode, e.target.value);
+          } else {
+            document.getElementById(`${mode}FilterValues`).innerHTML = '<div class="text-muted text-center">Select a column to see filter options</div>';
+          }
+          saveToStorage();
+        });
+        
+        document.getElementById(`${mode}FilterSelectAll`).addEventListener('click', () => {
+          document.querySelectorAll(`#${mode}FilterValues input[type="checkbox"]`).forEach(cb => cb.checked = true);
+        });
+        
+        document.getElementById(`${mode}FilterSelectNone`).addEventListener('click', () => {
+          document.querySelectorAll(`#${mode}FilterValues input[type="checkbox"]`).forEach(cb => cb.checked = false);
+        });
+        
+        document.getElementById(`${mode}FilterApply`).addEventListener('click', () => {
+          const checkboxes = document.querySelectorAll(`#${mode}FilterValues input[type="checkbox"]:checked`);
+          AppState.data[mode].filter.values = new Set(Array.from(checkboxes).map(cb => cb.value));
+          updateDataTable(mode);
+          saveToStorage();
+          showMessage(`Filter applied: ${AppState.data[mode].filter.values.size} values selected`, 'info');
+        });
+        
+        document.getElementById(`${mode}FilterClear`).addEventListener('click', () => {
+          AppState.data[mode].filter = { column: null, values: new Set() };
+          document.getElementById(`${mode}FilterColumn`).value = '';
+          document.getElementById(`${mode}FilterValues`).innerHTML = '<div class="text-muted text-center">Select a column to see filter options</div>';
+          updateDataTable(mode);
+          saveToStorage();
+          showMessage('Filter cleared', 'info');
+        });
+        
+        // Export buttons
+        document.getElementById(`${mode}ExportCsv`).addEventListener('click', () => exportCSV(mode));
+        document.getElementById(`${mode}ExportMailchimp`).addEventListener('click', () => exportMailchimp(mode));
+      });
+      
+      // Workspace management
+      document.getElementById('exportWorkspaceBtn').addEventListener('click', exportWorkspace);
+      document.getElementById('importWorkspaceBtn').addEventListener('click', importWorkspace);
+      document.getElementById('workspaceImportInput').addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (file) handleWorkspaceImport(file);
+        e.target.value = ''; // Reset input
+      });
+      
+      // About modal
+      document.getElementById('aboutBtn').addEventListener('click', () => {
+        document.getElementById('aboutVersion').textContent = APP_VERSION;
+        document.getElementById('aboutDate').textContent = APP_BUILD_DATE;
+        document.getElementById('aboutModal').style.display = 'flex';
+      });
+      
+      document.getElementById('aboutClose').addEventListener('click', () => {
+        document.getElementById('aboutModal').style.display = 'none';
+      });
+      
+      document.getElementById('aboutModal').addEventListener('click', (e) => {
+        if (e.target.id === 'aboutModal') {
+          document.getElementById('aboutModal').style.display = 'none';
+        }
+      });
+      
+      // Initialize UI
+      updatePageTitles();
+      updateProfileDropdowns();
+      
+      // Show welcome message
+      showMessage('MAAA Database Manager loaded successfully. Upload a CSV file to get started.', 'info');
+    });
+    
+    // Keyboard shortcuts
+    document.addEventListener('keydown', (e) => {
+      // ESC to close modals
+      if (e.key === 'Escape') {
+        document.getElementById('aboutModal').style.display = 'none';
+        // Also close custom prompt modal if it exists
+        const promptModal = document.getElementById('customPromptModal');
+        if (promptModal) promptModal.remove();
+        const confirmModal = document.getElementById('customConfirmModal');
+        if (confirmModal) confirmModal.remove();
+      }
+      
+      // Ctrl+E to export
+      if (e.ctrlKey && e.key === 'e') {
+        e.preventDefault();
+        exportCSV(AppState.currentMode);
+      }
+      
+      // Ctrl+S to save profile
+      if (e.ctrlKey && e.key === 's') {
+        e.preventDefault();
+        saveProfile(AppState.currentMode);
+      }
+    });
+  </script>
+
+</body>
+</html>

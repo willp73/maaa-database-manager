@@ -1,0 +1,8 @@
+# CSV data files contain personal member information - do not commit
+Data/*.csv
+
+# OS / editor noise
+.DS_Store
+Thumbs.db
+desktop.ini
+*.swp

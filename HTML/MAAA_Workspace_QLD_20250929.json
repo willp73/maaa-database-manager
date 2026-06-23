@@ -1,0 +1,113 @@
+{
+  "version": "1.0.2",
+  "timestamp": 1759137349700,
+  "application": "MAAA Database Manager",
+  "data": {
+    "currentState": "QLD",
+    "currentMode": "exec",
+    "profiles": {
+      "members": {
+        "Qld Member Basic": {
+          "version": "1.0.2",
+          "timestamp": 1759137213297,
+          "state": "QLD",
+          "selectedColumns": [
+            "AusNo",
+            "ClubID",
+            "SurName",
+            "GivenNames",
+            "DoB",
+            "Age",
+            "Sex",
+            "Mobile",
+            "Email1",
+            "Deceased"
+          ],
+          "filter": {
+            "column": null,
+            "values": []
+          },
+          "sort": {
+            "column": null,
+            "direction": null
+          },
+          "mailchimp": {
+            "email": "Email1",
+            "firstName": "GivenNames",
+            "lastName": "SurName",
+            "phone": "Phone"
+          },
+          "normalizeCase": true,
+          "previewNormalization": true
+        },
+        "QLD Girls": {
+          "version": "1.0.2",
+          "timestamp": 1756204428873,
+          "state": "QLD",
+          "selectedColumns": [
+            "AusNo",
+            "ClubID",
+            "SurName",
+            "GivenNames",
+            "DoB",
+            "Age",
+            "Sex",
+            "Mobile",
+            "Email1",
+            "Deceased"
+          ],
+          "filter": {
+            "column": "Sex",
+            "values": [
+              "F"
+            ]
+          },
+          "sort": {
+            "column": null,
+            "direction": null
+          },
+          "mailchimp": {
+            "email": "Email1",
+            "firstName": "GivenNames",
+            "lastName": "SurName",
+            "phone": "Phone"
+          },
+          "normalizeCase": true,
+          "previewNormalization": true
+        }
+      },
+      "exec": {
+        "QLD Club Execs Default": {
+          "version": "1.0.2",
+          "timestamp": 1759137329736,
+          "state": "QLD",
+          "selectedColumns": [
+            "ClubID",
+            "ClubName",
+            "Role",
+            "Surname",
+            "GivenNames",
+            "Mobile",
+            "Email"
+          ],
+          "filter": {
+            "column": null,
+            "values": []
+          },
+          "sort": {
+            "column": "ClubID",
+            "direction": "asc"
+          },
+          "mailchimp": {
+            "email": "Email",
+            "firstName": "GivenNames",
+            "lastName": "Surname",
+            "phone": "Phone"
+          },
+          "normalizeCase": true,
+          "previewNormalization": true
+        }
+      }
+    }
+  }
+}
