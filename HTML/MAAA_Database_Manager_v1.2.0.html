@@ -1155,7 +1155,7 @@
     function applyNormalization(data, mode, normalize) {
       if (!normalize) return data;
       
-      const nameColumns = ['GivenNames', 'Surname', 'SurName', 'FirstName', 'LastName', 'Given Names', 'Sur Name'];
+      const nameColumns = ['GivenNames', 'Surname', 'SurName', 'FirstName', 'LastName', 'Given Names', 'Sur Name', 'ClubName'];
       
       return data.map(row => {
         const normalizedRow = { ...row };
