@@ -979,7 +979,8 @@
 
         <h4>Changelog:</h4>
         <ul>
-          <li><strong>1.2.0</strong> - Club Register Export: one-row-per-club export for Monday.com board mirroring, with its own column selector</li>
+          <li><strong>1.2.1</strong> - Club name abbreviation fixes: RC, R/C, RM, R/M, RAAF preserved uppercase; dotted acronyms (T.N.Q.) auto-detected; ClubName normalization now applied at ingest for all exec rows</li>
+          <li><strong>1.2.0</strong> - Club Register Export: one-row-per-club export for Monday.com board mirroring, with exec contacts as flat columns (PresFirstName, PresSurname, etc.) and its own column selector</li>
           <li><strong>1.1.0</strong> - Field trimming on ingest; FirstName auto-extraction; phone normalisation; role-based email detection; MailChimp Tags column; exec empty role exclusion</li>
           <li><strong>1.0.2</strong> - Added name normalization preview and detailed summary</li>
           <li><strong>1.0.1</strong> - Fixed profile saving functionality</li>
@@ -995,7 +996,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
   <script>
     // Application state
-    const APP_VERSION = '1.2.0';
+    const APP_VERSION = '1.2.1';
     const APP_BUILD_DATE = '2026-06-23';
 
     const ROLE_BASED_PREFIXES = [
@@ -1151,6 +1152,22 @@
         .join(' ');
     }
 
+    const CLUB_NAME_TOKEN_FIXES = {
+      'rc': 'RC', 'r/c': 'R/C',
+      'rm': 'RM', 'r/m': 'R/M',
+      'raaf': 'RAAF',
+    };
+
+    function applyClubNameFixes(name) {
+      if (!name) return name;
+      return name.split(' ').map(token => {
+        const key = token.toLowerCase();
+        if (CLUB_NAME_TOKEN_FIXES[key]) return CLUB_NAME_TOKEN_FIXES[key];
+        if (/^([A-Za-z]\.){2,}$/.test(token)) return token.toUpperCase();
+        return token;
+      }).join(' ');
+    }
+
     // Apply case normalization to data if enabled
     function applyNormalization(data, mode, normalize) {
       if (!normalize) return data;
@@ -1162,7 +1179,7 @@
         
         nameColumns.forEach(col => {
           if (normalizedRow[col]) {
-            normalizedRow[col] = normalizeProperCase(normalizedRow[col]);
+            normalizedRow[col] = applyClubNameFixes(normalizeProperCase(normalizedRow[col]));
           }
         });
         
@@ -1375,7 +1392,7 @@
         roles.forEach(rolePrefix => {
           const execRow = {
             ClubID: row.ClubID || '',
-            ClubName: row.FullName || '',
+            ClubName: applyClubNameFixes(normalizeProperCase(row.FullName || '')),
             NickName: row.NickName || '',
             ClubType: row.ClubType || '',
             Role: roleNames[rolePrefix],
@@ -2718,7 +2735,7 @@
         data = data.map(row => {
           const r = { ...row };
           [...CLUB_REG_NAME_COLS, ...EXEC_NAME_COLS].forEach(col => {
-            if (r[col]) r[col] = normalizeProperCase(r[col]);
+            if (r[col]) r[col] = applyClubNameFixes(normalizeProperCase(r[col]));
           });
           CLUB_REG_UPPER_COLS.forEach(col => {
             if (r[col]) r[col] = r[col].toUpperCase();
