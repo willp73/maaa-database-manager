@@ -2610,7 +2610,8 @@
       'SecFirstName', 'SecSurname', 'SecEmail', 'SecMobile',
       'RegFirstName', 'RegSurname', 'RegEmail', 'RegMobile'
     ];
-    const CLUB_REG_NAME_COLS = ['ClubName', 'NickName', 'BodyName', 'FieldName', 'Description', 'MeetingPlace'];
+    const CLUB_REG_NAME_COLS = ['ClubName', 'BodyName', 'FieldName', 'Description', 'MeetingPlace'];
+    const CLUB_REG_UPPER_COLS = ['NickName']; // abbreviation fields — always ALL CAPS
     const TYPE_NAMES = { '0': 'Undefined', '1': 'Metro', '2': 'Country' };
     const EXEC_PREFIXES = ['Pres', 'Sec', 'Reg'];
     // Mapped exec contact columns appended after club-level columns
@@ -2717,6 +2718,9 @@
           const r = { ...row };
           [...CLUB_REG_NAME_COLS, ...EXEC_NAME_COLS].forEach(col => {
             if (r[col]) r[col] = normalizeProperCase(r[col]);
+          });
+          CLUB_REG_UPPER_COLS.forEach(col => {
+            if (r[col]) r[col] = r[col].toUpperCase();
           });
           return r;
         });
