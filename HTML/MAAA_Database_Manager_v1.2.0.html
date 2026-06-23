@@ -2604,16 +2604,28 @@
     }
 
     // Club Register Export helpers
-    const CLUB_REG_DEFAULTS = ['ClubID', 'ClubName', 'NickName', 'ClubType', 'TypeName', 'MemberCount', 'StateID'];
+    const CLUB_REG_DEFAULTS = [
+      'ClubID', 'ClubName', 'NickName', 'ClubType', 'TypeName', 'MemberCount', 'StateID',
+      'PresFirstName', 'PresSurname', 'PresEmail', 'PresMobile',
+      'SecFirstName', 'SecSurname', 'SecEmail', 'SecMobile',
+      'RegFirstName', 'RegSurname', 'RegEmail', 'RegMobile'
+    ];
     const CLUB_REG_NAME_COLS = ['ClubName', 'NickName', 'BodyName', 'FieldName', 'Description', 'MeetingPlace'];
     const TYPE_NAMES = { '0': 'Undefined', '1': 'Metro', '2': 'Country' };
     const EXEC_PREFIXES = ['Pres', 'Sec', 'Reg'];
+    // Mapped exec contact columns appended after club-level columns
+    const EXEC_MAPPED_COLS = [
+      'PresFirstName', 'PresSurname', 'PresEmail', 'PresMobile',
+      'SecFirstName', 'SecSurname', 'SecEmail', 'SecMobile',
+      'RegFirstName', 'RegSurname', 'RegEmail', 'RegMobile'
+    ];
 
     function getClubRegisterHeaders(rawData) {
       if (!rawData || rawData.length === 0) return [];
-      return Object.keys(rawData[0])
+      const clubCols = Object.keys(rawData[0])
         .filter(key => !EXEC_PREFIXES.some(p => key.startsWith(p)))
         .map(key => key === 'FullName' ? 'ClubName' : key);
+      return [...clubCols, ...EXEC_MAPPED_COLS];
     }
 
     function getClubRegisterData() {
@@ -2621,6 +2633,7 @@
       if (!raw || raw.length === 0) return [];
       return raw.map(row => {
         const newRow = {};
+        // Club-level columns (no exec prefix)
         Object.keys(row).forEach(key => {
           if (EXEC_PREFIXES.some(p => key.startsWith(p))) return;
           newRow[key === 'FullName' ? 'ClubName' : key] = row[key];
@@ -2628,6 +2641,13 @@
         if (!newRow.TypeName) {
           newRow.TypeName = TYPE_NAMES[String(newRow.ClubType)] || '';
         }
+        // Mapped exec contact columns
+        EXEC_PREFIXES.forEach(prefix => {
+          newRow[`${prefix}FirstName`] = (row[`${prefix}GivenNames`] || '').split(/\s+/)[0] || '';
+          newRow[`${prefix}Surname`]   = row[`${prefix}Surname`] || '';
+          newRow[`${prefix}Email`]     = row[`${prefix}Email`] || '';
+          newRow[`${prefix}Mobile`]    = row[`${prefix}Mobile`] || '';
+        });
         return newRow;
       });
     }
@@ -2691,10 +2711,11 @@
       const shouldNormalize = document.getElementById('execClubRegNormalizeCase')?.checked || false;
       const shouldNormalizePhone = document.getElementById('execClubRegNormalizePhone')?.checked || false;
 
+      const EXEC_NAME_COLS = EXEC_PREFIXES.flatMap(p => [`${p}FirstName`, `${p}Surname`]);
       if (shouldNormalize) {
         data = data.map(row => {
           const r = { ...row };
-          CLUB_REG_NAME_COLS.forEach(col => {
+          [...CLUB_REG_NAME_COLS, ...EXEC_NAME_COLS].forEach(col => {
             if (r[col]) r[col] = normalizeProperCase(r[col]);
           });
           return r;
