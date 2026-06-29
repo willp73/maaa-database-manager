@@ -234,7 +234,7 @@
       border-radius: 6px;
       max-width: 300px;
       width: max-content;
-      z-index: 200;
+      z-index: 300;
       box-shadow: 0 4px 16px rgba(0,0,0,0.2);
       white-space: normal;
       pointer-events: none;
@@ -848,7 +848,6 @@
               <input type="checkbox" id="membersPreviewNormalization">
               Preview name normalization in table
             </label>
-            <button class="btn" id="membersApplyPreview">Apply Preview</button>
           </div>
           <table class="data-table">
             <thead id="membersTableHead"></thead>
@@ -1018,7 +1017,6 @@
               <input type="checkbox" id="execPreviewNormalization">
               Preview name normalization in table
             </label>
-            <button class="btn" id="execApplyPreview">Apply Preview</button>
           </div>
           <table class="data-table">
             <thead id="execTableHead"></thead>
@@ -1079,8 +1077,8 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
   <script>
     // Application state
-    const APP_VERSION = '1.4.0';
-    const APP_BUILD_DATE = '2026-06-28';
+    const APP_VERSION = '1.5.0';
+    const APP_BUILD_DATE = '2026-06-29';
 
     const TOOLTIP_TEXT = {
       membersDataImport:       'Upload your MAAA Members CSV export (e.g. Members.QLD.csv). Data is processed entirely in your browser — nothing is uploaded to any server.',
@@ -1149,7 +1147,8 @@
       message.className = `message ${type}`;
       message.textContent = text;
       container.appendChild(message);
-      
+      message.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
       if (type !== 'error') {
         setTimeout(() => {
           if (message.parentNode) {
@@ -1167,7 +1166,7 @@
       if (!email || typeof email !== 'string') return false;
       const trimmed = email.trim();
       if (!trimmed) return false;
-      return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed);
+      return /^[^\s@]+@[^\s@]+\.[a-zA-Z]{2,}$/.test(trimmed);
     }
 
     function isRoleBasedEmail(email) {
@@ -1177,7 +1176,8 @@
         prefix === rb ||
         prefix.startsWith(rb + '.') ||
         prefix.startsWith(rb + '+') ||
-        prefix.startsWith(rb + '_')
+        prefix.startsWith(rb + '_') ||
+        prefix.startsWith(rb + '-')
       );
     }
 
@@ -1190,6 +1190,9 @@
       let local = digits;
       if (local.startsWith('61') && local.length === 11) {
         local = '0' + local.slice(2);
+      }
+      if (local.length === 9 && (local.startsWith('4') || local.startsWith('5'))) {
+        local = '0' + local;
       }
       if (local.length === 10) {
         if (local.startsWith('04') || local.startsWith('05')) {
@@ -1248,7 +1251,14 @@
           }
           
           // Regular capitalization
-          return word.charAt(0).toUpperCase() + word.slice(1);
+          const capitalized = word.charAt(0).toUpperCase() + word.slice(1);
+          if (/^Mc[a-z]/.test(capitalized)) {
+            return capitalized.slice(0, 2) + capitalized.charAt(2).toUpperCase() + capitalized.slice(3);
+          }
+          if (/^Mac[a-z]/.test(capitalized)) {
+            return capitalized.slice(0, 3) + capitalized.charAt(3).toUpperCase() + capitalized.slice(4);
+          }
+          return capitalized;
         })
         .join(' ');
     }
@@ -1690,6 +1700,7 @@
         const checkbox = document.createElement('input');
         checkbox.type = 'checkbox';
         checkbox.id = `${mode}_col_${header}`;
+        checkbox.dataset.column = header;
         checkbox.checked = selected.includes(header);
         checkbox.addEventListener('change', (e) => {
           if (e.target.checked) {
@@ -1813,9 +1824,13 @@
       const data = getDisplayData(mode);
       const headers = AppState.data[mode].selectedColumns;
       
-      if (headers.length === 0 || data.length === 0) {
+      if (data.length === 0) {
         document.getElementById(`${mode}TableContainer`).style.display = 'none';
         document.getElementById(`${mode}SummarySection`).style.display = 'none';
+        return;
+      }
+      if (headers.length === 0) {
+        document.getElementById(`${mode}TableContainer`).style.display = 'none';
         return;
       }
       
@@ -2205,7 +2220,7 @@
       // Capture current state including selected columns from UI
       const currentSelectedColumns = [];
       document.querySelectorAll(`#${mode}ColumnGrid input[type="checkbox"]:checked`).forEach(checkbox => {
-        const columnName = checkbox.id.replace(`${mode}_col_`, '');
+        const columnName = checkbox.dataset.column || checkbox.id.replace(`${mode}_col_`, '');
         currentSelectedColumns.push(columnName);
       });
       
@@ -2336,7 +2351,7 @@
       
       // Update column checkboxes in UI
       document.querySelectorAll(`#${mode}ColumnGrid input[type="checkbox"]`).forEach(checkbox => {
-        const columnName = checkbox.id.replace(`${mode}_col_`, '');
+        const columnName = checkbox.dataset.column || checkbox.id.replace(`${mode}_col_`, '');
         checkbox.checked = profile.selectedColumns.includes(columnName);
       });
       
@@ -2594,11 +2609,13 @@
       deleteBtn.focus();
 
       function handleDelete() {
+        document.removeEventListener('keydown', escHandler);
         modal.remove();
         callback(true);
       }
 
       function handleCancel() {
+        document.removeEventListener('keydown', escHandler);
         modal.remove();
         callback(false);
       }
@@ -2607,12 +2624,12 @@
       cancelBtn.addEventListener('click', handleCancel);
 
       // ESC key to cancel
-      document.addEventListener('keydown', function escHandler(e) {
+      function escHandler(e) {
         if (e.key === 'Escape') {
-          document.removeEventListener('keydown', escHandler);
           handleCancel();
         }
-      });
+      }
+      document.addEventListener('keydown', escHandler);
 
       // Click outside to cancel
       modal.addEventListener('click', function(e) {
@@ -3135,14 +3152,9 @@
       
       // Profile management event listeners for both modes
       ['members', 'exec'].forEach(mode => {
-        // Profile dropdown change - auto-apply when selection changes
+        // Profile dropdown change - update button states only, apply requires explicit click
         document.getElementById(`${mode}ProfileSelect`).addEventListener('change', function() {
           updateProfileButtons(mode);
-          
-          // Auto-apply the selected profile
-          if (this.value) {
-            applyProfile(mode);
-          }
         });
         
         // Profile save button
@@ -3174,9 +3186,6 @@
         document.getElementById(`${mode}PreviewNormalization`).addEventListener('change', function() {
           AppState.data[mode].previewNormalization = this.checked;
           saveToStorage();
-        });
-        
-        document.getElementById(`${mode}ApplyPreview`).addEventListener('click', function() {
           updateDataTable(mode);
         });
         
